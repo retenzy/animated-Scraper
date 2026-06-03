@@ -1,0 +1,9 @@
+{
+  "name": "amazon-reviews-extension",
+  "version": "1.0.0",
+  "description": "Chrome extension for Amazon reviews extraction",
+  "scripts": {
+    "dev": "echo \"Extension development mode (load unpacked in Chrome)\"",
+    "build": "echo \"Build script for extension\""
+  }
+}
