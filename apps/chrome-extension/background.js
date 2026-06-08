@@ -9,7 +9,7 @@ importScripts('db.js');
 let isRunning = false;
 let currentTabId = null;
 let keepAliveInterval = null;
-let BACKEND_URL = 'http://localhost:3000';
+let BACKEND_URL = 'https://animated-scraper-web.vercel.app';
 
 // Helper to wait
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -18,7 +18,7 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 function startKeepAlive() {
   stopKeepAlive();
   keepAliveInterval = setInterval(() => {
-    chrome.storage.local.get(['scraperState'], () => {});
+    chrome.storage.local.get(['scraperState'], () => { });
   }, 20000);
 }
 
@@ -37,7 +37,7 @@ function registerWithBackend(userId) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId, extensionId })
-  }).catch(() => {});
+  }).catch(() => { });
 }
 
 // Retrieve scraper state from storage
@@ -193,7 +193,7 @@ async function startQueue(queue, closeTabAfter, userId) {
       }
 
       if (!isRunning) {
-        if (closeTabAfter && tabId) chrome.tabs.remove(tabId).catch(() => {});
+        if (closeTabAfter && tabId) chrome.tabs.remove(tabId).catch(() => { });
         break;
       }
 
@@ -265,7 +265,7 @@ async function startQueue(queue, closeTabAfter, userId) {
     }).catch(err => console.warn('Failed to log scrape job:', err));
 
     if (closeTabAfter && tabId) {
-      chrome.tabs.remove(tabId).catch(() => {});
+      chrome.tabs.remove(tabId).catch(() => { });
       currentTabId = null;
     }
 

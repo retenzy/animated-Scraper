@@ -37,7 +37,7 @@ const elements = {
 // ===== State =====
 let productTitle = '';
 let userId = '';
-let BACKEND_URL = 'http://localhost:3000';
+let BACKEND_URL = 'https://animated-scraper-web.vercel.app';
 
 // ===== Initialize =====
 document.addEventListener('DOMContentLoaded', async () => {
@@ -78,7 +78,7 @@ function setupEventListeners() {
     elements.settingsSection.classList.toggle('hidden');
   });
   elements.settingsSaveBtn.addEventListener('click', () => {
-    const url = elements.backendUrlInput.value.trim() || 'http://localhost:3000';
+    const url = elements.backendUrlInput.value.trim() || 'https://animated-scraper-web.vercel.app';
     BACKEND_URL = url;
     chrome.storage.local.set({ backendUrl: url }, () => {
       elements.settingsSection.classList.add('hidden');
@@ -111,7 +111,7 @@ async function initUser() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, extensionId: chrome.runtime.id })
-      }).catch(() => {});
+      }).catch(() => { });
 
       resolve();
     });

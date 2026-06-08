@@ -31,7 +31,7 @@ cd apps/web && npx prisma generate && cd ../..
 npm run dev
 ```
 
-The app runs at `http://localhost:3000`.
+The app runs at `https://animated-scraper-web.vercel.app`.
 
 ## Environment Variables
 

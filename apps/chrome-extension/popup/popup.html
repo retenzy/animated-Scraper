@@ -1,22 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Amazon Reviews Extractor</title>
   <link rel="stylesheet" href="popup.css">
 </head>
+
 <body>
   <div class="container">
     <!-- Header (click to toggle settings) -->
     <div id="header-toggle" class="header" title="Click to configure backend URL">
       <div class="header-icon">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="url(#starGrad)" stroke="#F59E0B" stroke-width="1"/>
+          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
+            fill="url(#starGrad)" stroke="#F59E0B" stroke-width="1" />
           <defs>
             <linearGradient id="starGrad" x1="2" y1="2" x2="22" y2="22">
-              <stop offset="0%" stop-color="#FBBF24"/>
-              <stop offset="100%" stop-color="#F59E0B"/>
+              <stop offset="0%" stop-color="#FBBF24" />
+              <stop offset="100%" stop-color="#F59E0B" />
             </linearGradient>
           </defs>
         </svg>
@@ -32,7 +35,7 @@
       <div class="settings-row">
         <label for="backend-url-input">Backend URL</label>
         <div class="settings-input-row">
-          <input type="text" id="backend-url-input" placeholder="http://localhost:3000" />
+          <input type="text" id="backend-url-input" placeholder="https://animated-scraper-web.vercel.app" />
           <button id="settings-save-btn" class="settings-save-btn">Save</button>
         </div>
         <span class="hint">Change this if your backend runs on a different URL.</span>
@@ -47,8 +50,9 @@
       </div>
       <div class="coins-details">
         <span class="coins-badge">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="#FBBF24" style="margin-right: 4px; vertical-align: middle;">
-            <circle cx="12" cy="12" r="10" stroke="#F59E0B" stroke-width="2"/>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="#FBBF24"
+            style="margin-right: 4px; vertical-align: middle;">
+            <circle cx="12" cy="12" r="10" stroke="#F59E0B" stroke-width="2" />
             <text x="12" y="16" font-size="12" font-weight="bold" fill="#B45309" text-anchor="middle">¢</text>
           </svg>
           <span id="coins-count">0</span>
@@ -61,8 +65,8 @@
     <div id="status-section" class="status-section">
       <div id="status-icon" class="status-icon status-idle">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-          <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-          <path d="M8 4v4l3 2" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5" />
+          <path d="M8 4v4l3 2" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" />
         </svg>
       </div>
       <span id="status-text" class="status-text">Ready to extract</span>
@@ -85,7 +89,8 @@
         <span class="hint">Paste one or more ASINs or URLs. Leave empty to scrape the current active Amazon tab.</span>
       </div>
       <div class="control-group">
-        <p class="hint">The scraper runs sequentially in background tabs and pauses for 5-10 seconds between products to look natural.</p>
+        <p class="hint">The scraper runs sequentially in background tabs and pauses for 5-10 seconds between products to
+          look natural.</p>
       </div>
     </div>
 
@@ -104,19 +109,21 @@
     <div class="actions">
       <button id="extract-btn" class="btn btn-primary">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-          <path d="M8 1v10M4 7l4 4 4-4M2 13h12" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M8 1v10M4 7l4 4 4-4M2 13h12" stroke="currentColor" stroke-width="1.5" fill="none"
+            stroke-linecap="round" stroke-linejoin="round" />
         </svg>
         Extract Reviews
       </button>
       <button id="export-btn" class="btn btn-secondary hidden">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-          <path d="M2 12h12M8 2v8M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 12h12M8 2v8M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"
+            stroke-linecap="round" stroke-linejoin="round" />
         </svg>
         Export CSV
       </button>
       <button id="stop-btn" class="btn btn-danger hidden">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-          <rect x="4" y="4" width="8" height="8" rx="1" fill="currentColor"/>
+          <rect x="4" y="4" width="8" height="8" rx="1" fill="currentColor" />
         </svg>
         Stop
       </button>
@@ -135,7 +142,8 @@
     <div id="error-section" class="error-section hidden">
       <div class="error-content">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="#EF4444">
-          <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 10.5a.75.75 0 110-1.5.75.75 0 010 1.5zM8.75 8a.75.75 0 01-1.5 0V5a.75.75 0 011.5 0v3z"/>
+          <path
+            d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 10.5a.75.75 0 110-1.5.75.75 0 010 1.5zM8.75 8a.75.75 0 01-1.5 0V5a.75.75 0 011.5 0v3z" />
         </svg>
         <span id="error-text"></span>
       </div>
@@ -150,4 +158,5 @@
   <script src="../db.js"></script>
   <script src="popup.js"></script>
 </body>
+
 </html>

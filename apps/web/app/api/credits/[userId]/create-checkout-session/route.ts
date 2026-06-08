@@ -13,7 +13,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ userId:
     if (!user) return Response.json({ error: 'User not found' }, { status: 404 })
 
     const secretKey = process.env.STRIPE_SECRET_KEY
-    const clientUrl = bodyClientUrl || process.env.CLIENT_URL || 'http://localhost:3000'
+    const clientUrl = bodyClientUrl || process.env.CLIENT_URL || 'https://animated-scraper-web.vercel.app'
 
     if (!secretKey) {
       const mockSessionId = `mock_session_${Math.random().toString(36).substring(2, 9)}`

@@ -3,14 +3,24 @@
   "name": "Amazon Reviews Extractor",
   "version": "1.0.0",
   "description": "Extract product reviews from Amazon pages and export them as CSV",
-  "permissions": ["activeTab", "scripting", "storage", "tabs"],
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "tabs"
+  ],
   "background": {
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": ["http://localhost:3000/*", "https://localhost:3000/*"],
-      "js": ["website-content.js"],
+      "matches": [
+        "https://animated-scraper-web.vercel.app/*",
+        "https://localhost:3000/*"
+      ],
+      "js": [
+        "website-content.js"
+      ],
       "run_at": "document_start"
     }
   ],
@@ -30,7 +40,7 @@
     "*://*.amazon.sg/*",
     "*://*.amazon.ae/*",
     "*://*.amazon.sa/*",
-    "http://localhost:3000/*"
+    "https://animated-scraper-web.vercel.app/*"
   ],
   "externally_connectable": {
     "matches": [
