@@ -44,7 +44,8 @@
   ],
   "externally_connectable": {
     "matches": [
-      "*://localhost/*"
+      "*://localhost/*",
+      "https://animated-scraper-web.vercel.app/*"
     ]
   },
   "action": {

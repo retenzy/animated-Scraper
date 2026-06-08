@@ -22,6 +22,7 @@ const elements = {
   resultsSection: document.getElementById('results-section'),
   resultsList: document.getElementById('results-list'),
   resultsCount: document.getElementById('results-count'),
+  clearBtn: document.getElementById('clear-btn'),
   errorSection: document.getElementById('error-section'),
   errorText: document.getElementById('error-text'),
   usernameDisplay: document.getElementById('username-display'),
@@ -37,11 +38,10 @@ const elements = {
 // ===== State =====
 let productTitle = '';
 let userId = '';
-let BACKEND_URL = 'https://animated-scraper-web.vercel.app';
+let BACKEND_URL = 'http://localhost:3000';
 
 // ===== Initialize =====
 document.addEventListener('DOMContentLoaded', async () => {
-  // Load configurable backend URL from storage
   const stored = await new Promise((resolve) => {
     chrome.storage.local.get(['backendUrl'], (result) => resolve(result));
   });
@@ -51,13 +51,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners();
   await initUser();
   await restoreState();
+  await checkSavedReviews();
   await checkCurrentPage();
 
-  // Listen for real-time updates from storage (catches background updates)
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName === 'local') {
       if (changes.scraperState) {
         updateUI(changes.scraperState.newValue);
+        checkSavedReviews();
       }
       if (changes.userState) {
         updateUserUI(changes.userState.newValue);
@@ -71,6 +72,7 @@ function setupEventListeners() {
   elements.extractBtn.addEventListener('click', startExtraction);
   elements.exportBtn.addEventListener('click', exportCSV);
   elements.stopBtn.addEventListener('click', stopExtraction);
+  elements.clearBtn.addEventListener('click', clearAllReviews);
   elements.addCoinsBtn.addEventListener('click', () => {
     chrome.tabs.create({ url: `${BACKEND_URL}/dashboard/buy-credits` });
   });
@@ -78,7 +80,7 @@ function setupEventListeners() {
     elements.settingsSection.classList.toggle('hidden');
   });
   elements.settingsSaveBtn.addEventListener('click', () => {
-    const url = elements.backendUrlInput.value.trim() || 'https://animated-scraper-web.vercel.app';
+    const url = elements.backendUrlInput.value.trim() || 'http://localhost:3000';
     BACKEND_URL = url;
     chrome.storage.local.set({ backendUrl: url }, () => {
       elements.settingsSection.classList.add('hidden');
@@ -96,7 +98,6 @@ async function initUser() {
     chrome.storage.local.get(['userState'], (result) => {
       const userState = result.userState;
 
-      // If no valid synced user from dashboard, show "Not signed in"
       if (!userState || !userState.userId || userState.userId.startsWith('user_')) {
         updateUserUI({ userId: '', name: '', coins: 0 });
         resolve();
@@ -106,12 +107,11 @@ async function initUser() {
       userId = userState.userId || userState.id;
       updateUserUI(userState);
 
-      // Register this extension with the backend for auto-connect
       fetch(`${BACKEND_URL}/api/extensions/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, extensionId: chrome.runtime.id })
-      }).catch(() => { });
+      }).catch(() => {});
 
       resolve();
     });
@@ -125,6 +125,37 @@ function updateUserUI(userState) {
     : 'Not signed in';
   elements.usernameDisplay.textContent = displayName;
   elements.coinsCount.textContent = userState.coins !== undefined ? userState.coins : '0';
+}
+
+// ===== Check saved reviews in IndexedDB =====
+async function checkSavedReviews() {
+  let totalReviews = 0;
+  try {
+    totalReviews = await self.__reviewsDB.countReviews();
+  } catch (e) {
+    console.error('Failed to count reviews:', e);
+  }
+
+  if (totalReviews > 0) {
+    elements.resultsSection.classList.remove('hidden');
+    // Only reload preview if results aren't already showing or count changed
+    if (!elements.resultsList.children.length || elements.resultsCount.textContent !== String(totalReviews)) {
+      showResultsPreview();
+    }
+  }
+}
+
+// ===== Clear all reviews from IndexedDB =====
+async function clearAllReviews() {
+  if (!confirm('Delete all saved reviews? This cannot be undone.')) return;
+  try {
+    await self.__reviewsDB.clearAllReviews();
+    elements.resultsSection.classList.add('hidden');
+    elements.resultsList.innerHTML = '';
+    elements.resultsSaved.textContent = '0';
+  } catch (e) {
+    console.error('Failed to clear reviews:', e);
+  }
 }
 
 // ===== Check if current tab is an Amazon page for product info =====
@@ -180,11 +211,9 @@ async function restoreState() {
         currentProductTitle: ''
       };
 
-      // If state says 'running', check if background is alive
       if (state.status === 'running') {
         chrome.runtime.sendMessage({ action: 'PING' }, (response) => {
           if (chrome.runtime.lastError || !response?.success) {
-            // Background was restarted — recovery state
             state.status = 'idle';
             state.progressText = state.progressCount > 0
               ? `Scraping was interrupted. ${state.progressCount} reviews saved.`
@@ -226,10 +255,8 @@ function updateUI(state) {
 
     if (reviewCount > 0) {
       elements.exportBtn.classList.remove('hidden');
-      showResults();
     } else {
       elements.exportBtn.classList.add('hidden');
-      elements.resultsSection.classList.add('hidden');
     }
   }
 }
@@ -354,8 +381,7 @@ function stopExtraction() {
 }
 
 // ===== Show Results Preview (reads from IndexedDB) =====
-async function showResults() {
-  elements.resultsSection.classList.remove('hidden');
+async function showResultsPreview() {
   elements.resultsList.innerHTML = '';
 
   let reviews = [];
@@ -378,6 +404,7 @@ async function showResults() {
       </div>
       <div class="review-card-title">${escapeHtml(r.title)}</div>
       <div class="review-card-date">${escapeHtml(r.date)}${r.verified === 'Yes' ? ' · ✓ Verified' : ''}</div>
+      <div class="review-card-asin">${escapeHtml(r.asin || '')}</div>
     `;
     elements.resultsList.appendChild(card);
   });

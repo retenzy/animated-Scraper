@@ -422,6 +422,42 @@ select option {
   color: var(--text-primary);
 }
 
+.results-header-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.results-saved-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-right: 4px;
+}
+
+.btn-clear {
+  width: 18px;
+  height: 18px;
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: none;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+  opacity: 0.6;
+  line-height: 1;
+}
+
+.btn-clear:hover {
+  opacity: 1;
+  background: rgba(239, 68, 68, 0.25);
+}
+
 .results-badge {
   font-size: 11px;
   font-weight: 700;
@@ -491,6 +527,14 @@ select option {
 .review-card-date {
   font-size: 10px;
   color: var(--text-muted);
+}
+
+.review-card-asin {
+  font-size: 9px;
+  color: var(--text-muted);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  margin-top: 2px;
+  opacity: 0.7;
 }
 
 /* ===== Error ===== */
