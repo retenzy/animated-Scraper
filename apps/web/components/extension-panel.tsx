@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
+import { Database, Download } from 'lucide-react'
 
 declare global {
   interface Window {
@@ -21,6 +22,8 @@ export default function ExtensionPanel() {
   const [extensionStatus, setExtensionStatus] = useState('not_found')
   const [syncedStatus, setSyncedStatus] = useState<string | null>(null)
   const [autoFound, setAutoFound] = useState(false)
+  const [localReviews, setLocalReviews] = useState<number | null>(null)
+  const [localReviewsLoading, setLocalReviewsLoading] = useState(false)
 
   // Listen for content script auto-announce
   useEffect(() => {
@@ -89,6 +92,50 @@ export default function ExtensionPanel() {
     }
   }
 
+  // When connected, fetch local review count from extension
+  useEffect(() => {
+    if (extensionStatus === 'connected' && extensionId) {
+      fetchLocalReviews()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [extensionStatus, extensionId])
+
+  const fetchLocalReviews = () => {
+    const cr = typeof window !== 'undefined' ? window.chrome : undefined
+    if (!cr?.runtime || !extensionId) return
+    setLocalReviewsLoading(true)
+    cr.runtime.sendMessage(extensionId, { action: 'GET_REVIEWS' }, (response: any) => {
+      setLocalReviewsLoading(false)
+      if (!cr.runtime.lastError && response?.success) {
+        setLocalReviews(response.total)
+      }
+    })
+  }
+
+  const exportLocalReviews = () => {
+    const cr = typeof window !== 'undefined' ? window.chrome : undefined
+    if (!cr?.runtime || !extensionId) return
+    cr.runtime.sendMessage(extensionId, { action: 'GET_REVIEWS' }, (response: any) => {
+      if (!cr.runtime.lastError && response?.success && response.reviews?.length) {
+        fetch('/api/csv', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reviews: response.reviews, filename: 'local-reviews.csv' }),
+        })
+          .then((r) => r.blob())
+          .then((blob) => {
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = 'local-reviews.csv'
+            a.click()
+            URL.revokeObjectURL(url)
+          })
+          .catch(() => {})
+      }
+    })
+  }
+
   const syncToExtension = (id?: string) => {
     const cr = typeof window !== 'undefined' ? window.chrome : undefined
     const extId = id || extensionId
@@ -142,7 +189,7 @@ export default function ExtensionPanel() {
     <div className="p-8 rounded-xl border border-border bg-card/50 backdrop-blur-sm">
       <h3 className="text-xl font-bold text-foreground mb-3">Extension Control Panel</h3>
       <p className="text-sm text-muted-foreground mb-6">
-        Synchronize your session and credits with the Chrome extension. The extension auto-announces its ID when you load this page.
+        Manage your Chrome extension connection and browse locally stored reviews.
       </p>
 
       <div className="flex items-center gap-3 mb-6 p-3 rounded-lg bg-background/50 border border-border/50">
@@ -176,7 +223,7 @@ export default function ExtensionPanel() {
         </p>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex gap-3 mb-6">
         <button
           onClick={() => syncToExtension()}
           disabled={extensionStatus !== 'connected' || !session?.user}
@@ -196,6 +243,35 @@ export default function ExtensionPanel() {
           Scan
         </button>
       </div>
+
+      {/* Local Reviews section — only shown when extension is connected */}
+      {extensionStatus === 'connected' && (
+        <div className="rounded-lg border border-border bg-background/50 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Database className="w-4 h-4 text-primary" />
+              <span className="text-sm font-semibold text-foreground">Local Reviews</span>
+            </div>
+            {localReviewsLoading ? (
+              <span className="text-xs text-muted-foreground animate-pulse">Loading...</span>
+            ) : localReviews !== null ? (
+              <span className="text-sm font-bold text-primary">{localReviews} saved</span>
+            ) : null}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Reviews are stored locally in the extension&apos;s IndexedDB. They never leave your browser unless you export them.
+          </p>
+          <button
+            onClick={exportLocalReviews}
+            disabled={!localReviews || localReviews === 0}
+            className="flex items-center gap-2 w-full py-2.5 px-4 rounded-lg text-sm font-semibold border border-border bg-background text-foreground hover:bg-muted transition disabled:opacity-50"
+          >
+            <Download className="w-4 h-4" />
+            Export all as CSV
+          </button>
+        </div>
+      )}
+
       {!session?.user && (
         <p className="text-xs text-red-400 text-center mt-3">Please log in to sync credits.</p>
       )}

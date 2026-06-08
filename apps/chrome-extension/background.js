@@ -396,4 +396,20 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
     sendResponse({ success: true, version: '1.0.0' });
     return true;
   }
+  if (message.action === 'GET_REVIEWS') {
+    self.__reviewsDB.getAllReviews().then((reviews) => {
+      sendResponse({ success: true, reviews, total: reviews.length });
+    }).catch((err) => {
+      sendResponse({ success: false, error: err.message });
+    });
+    return true;
+  }
+  if (message.action === 'GET_REVIEWS_BY_ASIN') {
+    self.__reviewsDB.getReviewsByAsin(message.asin).then((reviews) => {
+      sendResponse({ success: true, reviews, total: reviews.length });
+    }).catch((err) => {
+      sendResponse({ success: false, error: err.message });
+    });
+    return true;
+  }
 });
