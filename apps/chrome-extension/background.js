@@ -18,7 +18,7 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 function startKeepAlive() {
   stopKeepAlive();
   keepAliveInterval = setInterval(() => {
-    chrome.storage.local.get(['scraperState'], () => { });
+    chrome.storage.local.get(['scraperState'], () => {});
   }, 20000);
 }
 
@@ -37,32 +37,44 @@ function registerWithBackend(userId) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId, extensionId })
-  }).catch(() => { });
+  }).catch(() => {});
 }
 
-// Retrieve scraper state from storage
-function getStoredState() {
-  return new Promise((resolve) => {
+// Retrieve scraper state from storage (chrome.storage + IndexedDB fallback)
+async function getStoredState() {
+  // Try chrome.storage first (fast)
+  const fromStorage = await new Promise((resolve) => {
     chrome.storage.local.get(['scraperState'], (result) => {
-      resolve(result.scraperState || {
-        status: 'idle',
-        queue: [],
-        currentIndex: 0,
-        progressText: 'Ready to extract',
-        progressCount: 0,
-        extractedReviews: [],
-        currentProductTitle: ''
-      });
+      resolve(result.scraperState || null);
     });
   });
+
+  if (fromStorage) return fromStorage;
+
+  // Fallback to IndexedDB backup
+  const fromDB = await self.__reviewsDB.loadState();
+  if (fromDB) return fromDB;
+
+  // Default state
+  return {
+    status: 'idle',
+    queue: [],
+    currentIndex: 0,
+    progressText: 'Ready to extract',
+    progressCount: 0,
+    extractedReviews: [],
+    currentProductTitle: ''
+  };
 }
 
-// Update scraper state in storage
-function updateState(updates) {
-  return new Promise(async (resolve) => {
-    const currentState = await getStoredState();
-    const newState = { ...currentState, ...updates };
-    chrome.storage.local.set({ scraperState: newState }, () => {
+// Update scraper state in both chrome.storage + IndexedDB
+async function updateState(updates) {
+  const currentState = await getStoredState();
+  const newState = { ...currentState, ...updates };
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ scraperState: newState }, async () => {
+      // Backup to IndexedDB for persistence across SW restarts
+      await self.__reviewsDB.saveState(newState).catch(() => {});
       resolve(newState);
     });
   });
@@ -193,7 +205,7 @@ async function startQueue(queue, closeTabAfter, userId) {
       }
 
       if (!isRunning) {
-        if (closeTabAfter && tabId) chrome.tabs.remove(tabId).catch(() => { });
+        if (closeTabAfter && tabId) chrome.tabs.remove(tabId).catch(() => {});
         break;
       }
 
@@ -232,7 +244,6 @@ async function startQueue(queue, closeTabAfter, userId) {
           }
         }
 
-        // Deduct coins based on actual review count (1 coin per 100 reviews)
         const coinsToDeduct = Math.ceil(addedCount / 100);
         const deductRes = await fetch(`${backendUrl}/api/credits/${userId}/deduct`, {
           method: 'POST',
@@ -265,7 +276,7 @@ async function startQueue(queue, closeTabAfter, userId) {
     }).catch(err => console.warn('Failed to log scrape job:', err));
 
     if (closeTabAfter && tabId) {
-      chrome.tabs.remove(tabId).catch(() => { });
+      chrome.tabs.remove(tabId).catch(() => {});
       currentTabId = null;
     }
 
@@ -296,7 +307,6 @@ async function startQueue(queue, closeTabAfter, userId) {
       currentProductTitle: ''
     });
   } else {
-    // Scraping was interrupted — update state to reflect this
     const currentState = await getStoredState();
     if (currentState.status === 'running') {
       currentTabId = null;
@@ -312,13 +322,10 @@ async function startQueue(queue, closeTabAfter, userId) {
 
 // Stop the scraping process
 async function stopQueue() {
-  // Always attempt stop, even if isRunning is false (handles SW restart)
   if (currentTabId) {
     try {
       chrome.tabs.remove(currentTabId);
-    } catch (e) {
-      // Tab might already be closed
-    }
+    } catch (e) {}
     currentTabId = null;
   }
 
@@ -333,7 +340,7 @@ async function stopQueue() {
   });
 }
 
-// ===== Startup: Load backend URL + handle stale state =====
+// ===== Startup: Load backend URL + recover any stale state =====
 (async () => {
   chrome.storage.local.get(['backendUrl'], (result) => {
     if (result.backendUrl) BACKEND_URL = result.backendUrl;
@@ -341,14 +348,11 @@ async function stopQueue() {
 
   const state = await getStoredState();
   if (state.status === 'running') {
-    // Check if the scrape tab still exists — if not, the SW was killed mid-scrape
-    if (state.currentProductTitle) {
-      // Update state to show interruption, but don't clear it completely
-      await updateState({
-        progressText: `Extraction was interrupted. ${state.progressCount || 0} reviews were saved.`,
-      });
-    }
-    console.warn('[background] Restarted with running state — was interrupted.');
+    // Recover the scrape state — keep alive so popup can see it
+    await updateState({
+      progressText: `Extraction was interrupted. ${state.progressCount || 0} reviews were saved.`,
+    });
+    console.warn('[background] Restarted with running state — recovered from storage.');
   }
 })();
 
@@ -361,7 +365,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     stopQueue().then(() => {
       sendResponse({ status: 'stopped' });
     });
-    return true; // Keep channel open for async response
+    return true;
+  } else if (message.action === 'GET_STATUS') {
+    getStoredState().then((state) => {
+      sendResponse({ state, isRunning });
+    });
+    return true;
   }
   return true;
 });

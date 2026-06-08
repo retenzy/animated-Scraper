@@ -39,6 +39,7 @@ const elements = {
 let productTitle = '';
 let userId = '';
 let BACKEND_URL = 'http://localhost:3000';
+let coinRefreshInterval = null;
 
 // ===== Initialize =====
 document.addEventListener('DOMContentLoaded', async () => {
@@ -54,6 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await checkSavedReviews();
   await checkCurrentPage();
 
+  // Listen for real-time updates from storage
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName === 'local') {
       if (changes.scraperState) {
@@ -65,7 +67,39 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
   });
+
+  // Start periodic coin balance refresh (every 30s)
+  startCoinRefresh();
 });
+
+// Clean up interval when popup closes
+window.addEventListener('unload', () => {
+  if (coinRefreshInterval) clearInterval(coinRefreshInterval);
+});
+
+// ===== Periodic Coin Refresh =====
+function startCoinRefresh() {
+  if (coinRefreshInterval) clearInterval(coinRefreshInterval);
+  coinRefreshInterval = setInterval(refreshCoins, 30000);
+  refreshCoins(); // Also fetch immediately
+}
+
+async function refreshCoins() {
+  if (!userId || userId.startsWith('user_')) return;
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/credits/${userId}`);
+    const data = await res.json();
+    if (data.coins !== undefined) {
+      chrome.storage.local.get(['userState'], (result) => {
+        const userState = result.userState || {};
+        userState.coins = data.coins;
+        chrome.storage.local.set({ userState });
+      });
+    }
+  } catch (e) {
+    // Backend might not be available — ignore
+  }
+}
 
 // ===== Setup Event Listeners =====
 function setupEventListeners() {
@@ -138,7 +172,6 @@ async function checkSavedReviews() {
 
   if (totalReviews > 0) {
     elements.resultsSection.classList.remove('hidden');
-    // Only reload preview if results aren't already showing or count changed
     if (!elements.resultsList.children.length || elements.resultsCount.textContent !== String(totalReviews)) {
       showResultsPreview();
     }
@@ -152,13 +185,12 @@ async function clearAllReviews() {
     await self.__reviewsDB.clearAllReviews();
     elements.resultsSection.classList.add('hidden');
     elements.resultsList.innerHTML = '';
-    elements.resultsSaved.textContent = '0';
   } catch (e) {
     console.error('Failed to clear reviews:', e);
   }
 }
 
-// ===== Check if current tab is an Amazon page for product info =====
+// ===== Check if current tab is an Amazon page =====
 async function checkCurrentPage() {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -200,33 +232,39 @@ async function checkCurrentPage() {
 // ===== Restore State on Popup Open =====
 async function restoreState() {
   return new Promise((resolve) => {
-    chrome.storage.local.get(['scraperState'], (result) => {
-      const state = result.scraperState || {
-        status: 'idle',
-        queue: [],
-        currentIndex: 0,
-        progressText: 'Ready to extract',
-        progressCount: 0,
-        extractedReviews: [],
-        currentProductTitle: ''
-      };
+    // Fetch live state from background service worker first
+    chrome.runtime.sendMessage({ action: 'GET_STATUS' }, (response) => {
+      if (response?.state) {
+        // Background is alive — use its live state
+        updateUI(response.state);
+        resolve();
+        return;
+      }
 
-      if (state.status === 'running') {
-        chrome.runtime.sendMessage({ action: 'PING' }, (response) => {
-          if (chrome.runtime.lastError || !response?.success) {
-            state.status = 'idle';
-            state.progressText = state.progressCount > 0
-              ? `Scraping was interrupted. ${state.progressCount} reviews saved.`
-              : 'Ready to extract';
-            chrome.storage.local.set({ scraperState: state });
-          }
-          updateUI(state);
-          resolve();
-        });
-      } else {
+      // Background not reachable — read from storage directly
+      chrome.storage.local.get(['scraperState'], (result) => {
+        const state = result.scraperState || {
+          status: 'idle',
+          queue: [],
+          currentIndex: 0,
+          progressText: 'Ready to extract',
+          progressCount: 0,
+          extractedReviews: [],
+          currentProductTitle: ''
+        };
+
+        if (state.status === 'running') {
+          // SW was restarted — recover to idle
+          state.status = 'idle';
+          state.progressText = state.progressCount > 0
+            ? `Scraping was interrupted. ${state.progressCount} reviews saved.`
+            : 'Ready to extract';
+          chrome.storage.local.set({ scraperState: state });
+        }
+
         updateUI(state);
         resolve();
-      }
+      });
     });
   });
 }
