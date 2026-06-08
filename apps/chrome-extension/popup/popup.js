@@ -24,22 +24,44 @@ const elements = {
   resultsCount: document.getElementById('results-count'),
   errorSection: document.getElementById('error-section'),
   errorText: document.getElementById('error-text'),
+  usernameDisplay: document.getElementById('username-display'),
+  coinsCount: document.getElementById('coins-count'),
+  addCoinsBtn: document.getElementById('add-coins-btn'),
+  headerToggle: document.getElementById('header-toggle'),
+  settingsSection: document.getElementById('settings-section'),
+  backendUrlInput: document.getElementById('backend-url-input'),
+  settingsSaveBtn: document.getElementById('settings-save-btn'),
+  dashboardLink: document.getElementById('dashboard-link'),
 };
 
 // ===== State =====
-let extractedReviews = [];
 let productTitle = '';
+let userId = '';
+let BACKEND_URL = 'http://localhost:3000';
 
 // ===== Initialize =====
 document.addEventListener('DOMContentLoaded', async () => {
+  // Load configurable backend URL from storage
+  const stored = await new Promise((resolve) => {
+    chrome.storage.local.get(['backendUrl'], (result) => resolve(result));
+  });
+  if (stored.backendUrl) BACKEND_URL = stored.backendUrl;
+  if (elements.backendUrlInput) elements.backendUrlInput.value = BACKEND_URL;
+
   setupEventListeners();
+  await initUser();
   await restoreState();
   await checkCurrentPage();
-  
-  // Listen for real-time progress updates from storage
+
+  // Listen for real-time updates from storage (catches background updates)
   chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName === 'local' && changes.scraperState) {
-      updateUI(changes.scraperState.newValue);
+    if (areaName === 'local') {
+      if (changes.scraperState) {
+        updateUI(changes.scraperState.newValue);
+      }
+      if (changes.userState) {
+        updateUserUI(changes.userState.newValue);
+      }
     }
   });
 });
@@ -49,6 +71,60 @@ function setupEventListeners() {
   elements.extractBtn.addEventListener('click', startExtraction);
   elements.exportBtn.addEventListener('click', exportCSV);
   elements.stopBtn.addEventListener('click', stopExtraction);
+  elements.addCoinsBtn.addEventListener('click', () => {
+    chrome.tabs.create({ url: `${BACKEND_URL}/dashboard/buy-credits` });
+  });
+  elements.headerToggle.addEventListener('click', () => {
+    elements.settingsSection.classList.toggle('hidden');
+  });
+  elements.settingsSaveBtn.addEventListener('click', () => {
+    const url = elements.backendUrlInput.value.trim() || 'http://localhost:3000';
+    BACKEND_URL = url;
+    chrome.storage.local.set({ backendUrl: url }, () => {
+      elements.settingsSection.classList.add('hidden');
+    });
+  });
+  elements.dashboardLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    chrome.tabs.create({ url: `${BACKEND_URL}/dashboard` });
+  });
+}
+
+// ===== User Management Logic =====
+async function initUser() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(['userState'], (result) => {
+      const userState = result.userState;
+
+      // If no valid synced user from dashboard, show "Not signed in"
+      if (!userState || !userState.userId || userState.userId.startsWith('user_')) {
+        updateUserUI({ userId: '', name: '', coins: 0 });
+        resolve();
+        return;
+      }
+
+      userId = userState.userId || userState.id;
+      updateUserUI(userState);
+
+      // Register this extension with the backend for auto-connect
+      fetch(`${BACKEND_URL}/api/extensions/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, extensionId: chrome.runtime.id })
+      }).catch(() => {});
+
+      resolve();
+    });
+  });
+}
+
+function updateUserUI(userState) {
+  if (!userState) return;
+  const displayName = userState.name && !userState.name.startsWith('user_')
+    ? userState.name.split('@')[0]
+    : 'Not signed in';
+  elements.usernameDisplay.textContent = displayName;
+  elements.coinsCount.textContent = userState.coins !== undefined ? userState.coins : '0';
 }
 
 // ===== Check if current tab is an Amazon page for product info =====
@@ -60,7 +136,6 @@ async function checkCurrentPage() {
     const isAmazon = /amazon\.(com|in|co\.uk|de|fr|it|es|ca|co\.jp|com\.au|com\.br|com\.mx|sg|ae|sa)/i.test(tab.url);
     if (!isAmazon) return;
 
-    // Try to get product info from the page
     try {
       const results = await chrome.scripting.executeScript({
         target: { tabId: tab.id },
@@ -93,48 +168,63 @@ async function checkCurrentPage() {
 
 // ===== Restore State on Popup Open =====
 async function restoreState() {
-  chrome.storage.local.get(['scraperState'], (result) => {
-    const state = result.scraperState || {
-      status: 'idle',
-      queue: [],
-      currentIndex: 0,
-      progressText: 'Ready to extract',
-      progressCount: 0,
-      extractedReviews: [],
-      currentProductTitle: ''
-    };
-    updateUI(state);
+  return new Promise((resolve) => {
+    chrome.storage.local.get(['scraperState'], (result) => {
+      const state = result.scraperState || {
+        status: 'idle',
+        queue: [],
+        currentIndex: 0,
+        progressText: 'Ready to extract',
+        progressCount: 0,
+        extractedReviews: [],
+        currentProductTitle: ''
+      };
+
+      // If state says 'running', check if background is alive
+      if (state.status === 'running') {
+        chrome.runtime.sendMessage({ action: 'PING' }, (response) => {
+          if (chrome.runtime.lastError || !response?.success) {
+            // Background was restarted — recovery state
+            state.status = 'idle';
+            state.progressText = state.progressCount > 0
+              ? `Scraping was interrupted. ${state.progressCount} reviews saved.`
+              : 'Ready to extract';
+            chrome.storage.local.set({ scraperState: state });
+          }
+          updateUI(state);
+          resolve();
+        });
+      } else {
+        updateUI(state);
+        resolve();
+      }
+    });
   });
 }
 
 // ===== Update UI Elements based on Scraper State =====
 function updateUI(state) {
-  extractedReviews = state.extractedReviews || [];
-  
-  // 1. Update Status Header
-  setStatus(state.status, state.progressText);
+  const reviewCount = state.progressCount || 0;
 
-  // 2. Adjust visibility of action buttons
   if (state.status === 'running') {
     elements.extractBtn.classList.add('hidden');
     elements.stopBtn.classList.remove('hidden');
     elements.exportBtn.classList.add('hidden');
     elements.progressSection.classList.remove('hidden');
     elements.errorSection.classList.add('hidden');
-    
-    // Update progress bar
+
     const total = state.queue.length || 1;
     const current = state.currentIndex || 0;
     const pct = Math.round((current / total) * 100);
     elements.progressFill.style.width = `${pct}%`;
     elements.progressText.textContent = state.progressText;
-    elements.progressCount.textContent = `${state.progressCount} reviews`;
+    elements.progressCount.textContent = `${reviewCount} reviews`;
   } else {
     elements.extractBtn.classList.remove('hidden');
     elements.stopBtn.classList.add('hidden');
     elements.progressSection.classList.add('hidden');
 
-    if (extractedReviews.length > 0) {
+    if (reviewCount > 0) {
       elements.exportBtn.classList.remove('hidden');
       showResults();
     } else {
@@ -148,42 +238,42 @@ function updateUI(state) {
 function resolveUrl(input, defaultOrigin = 'https://www.amazon.com') {
   const trimmed = input.trim();
   if (!trimmed) return null;
-  
+
   const asinMatch = trimmed.match(/\b([A-Z0-9]{10})\b/i);
   const isJustAsin = asinMatch && asinMatch[0] === trimmed;
-  
+
   if (isJustAsin) {
     return `${defaultOrigin}/product-reviews/${trimmed}/ref=cm_cr_arp_d_product_top?ie=UTF8&reviewerType=all_reviews`;
   }
-  
+
   if (/^https?:\/\//i.test(trimmed)) {
     try {
       const url = new URL(trimmed);
       const origin = url.origin;
-      
+
       if (url.pathname.includes('/product-reviews/')) {
         if (!url.searchParams.has('reviewerType')) {
           url.searchParams.set('reviewerType', 'all_reviews');
         }
         return url.toString();
       }
-      
+
       const dpMatch = url.pathname.match(/\/(?:dp|gp\/product|product)\/([A-Z0-9]{10})/i);
       if (dpMatch) {
         const asin = dpMatch[1];
         return `${origin}/product-reviews/${asin}/ref=cm_cr_arp_d_product_top?ie=UTF8&reviewerType=all_reviews`;
       }
-      
+
       return trimmed;
     } catch (e) {
       return trimmed;
     }
   }
-  
+
   if (asinMatch) {
     return `${defaultOrigin}/product-reviews/${asinMatch[1]}/ref=cm_cr_arp_d_product_top?ie=UTF8&reviewerType=all_reviews`;
   }
-  
+
   return null;
 }
 
@@ -192,8 +282,7 @@ async function startExtraction() {
   const inputVal = elements.reviewInput.value.trim();
   let queue = [];
   let closeTabAfter = true;
-  
-  // Detect current Amazon tab domain to use as base for simple ASIN inputs
+
   let defaultOrigin = 'https://www.amazon.com';
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -209,31 +298,28 @@ async function startExtraction() {
     const lines = inputVal.split('\n');
     for (const line of lines) {
       const resolved = resolveUrl(line, defaultOrigin);
-      if (resolved) {
-        queue.push(resolved);
-      }
+      if (resolved) queue.push(resolved);
     }
   }
 
   if (queue.length === 0) {
-    // Fall back to active tab if no URLs/ASINs entered
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (!tab?.url) {
         showError('No active tab or input ASINs found.');
         return;
       }
-      
+
       const isAmazon = /amazon\.(com|in|co\.uk|de|fr|it|es|ca|co\.jp|com\.au|com\.br|com\.mx|sg|ae|sa)/i.test(tab.url);
       if (!isAmazon) {
         showError('Navigate to an Amazon page or paste URLs/ASINs first.');
         return;
       }
-      
+
       const resolved = resolveUrl(tab.url, defaultOrigin);
       if (resolved) {
         queue.push(resolved);
-        closeTabAfter = false; // Don't close the user's active tab
+        closeTabAfter = false;
       } else {
         showError('Could not parse Amazon URL of active tab.');
         return;
@@ -244,28 +330,44 @@ async function startExtraction() {
     }
   }
 
+  const userState = await new Promise((r) => chrome.storage.local.get(['userState'], (result) => r(result.userState || {})));
+  const coins = userState.coins || 0;
+  if (coins <= 0) {
+    showError('Insufficient coins! Click the "+" button to buy more.');
+    return;
+  }
+
   elements.errorSection.classList.add('hidden');
-  
-  // Send message to service worker
+
   chrome.runtime.sendMessage({
     action: 'START_SCRAPING',
     queue: queue,
-    closeTabAfter: closeTabAfter
+    closeTabAfter: closeTabAfter,
+    userId: userId
   });
 }
 
 // ===== Stop Extraction Queue =====
 function stopExtraction() {
   chrome.runtime.sendMessage({ action: 'STOP_SCRAPING' });
+  setStatus('running', 'Stopping extraction...');
 }
 
-// ===== Show Results Preview =====
-function showResults() {
+// ===== Show Results Preview (reads from IndexedDB) =====
+async function showResults() {
   elements.resultsSection.classList.remove('hidden');
-  elements.resultsCount.textContent = extractedReviews.length;
   elements.resultsList.innerHTML = '';
 
-  const preview = extractedReviews.slice(0, 10);
+  let reviews = [];
+  try {
+    reviews = await self.__reviewsDB.getAllReviews();
+  } catch (e) {
+    console.error('Failed to load reviews from IndexedDB:', e);
+  }
+
+  elements.resultsCount.textContent = reviews.length;
+
+  const preview = reviews.slice(0, 10);
   preview.forEach((r) => {
     const card = document.createElement('div');
     card.className = 'review-card';
@@ -280,20 +382,27 @@ function showResults() {
     elements.resultsList.appendChild(card);
   });
 
-  if (extractedReviews.length > 10) {
+  if (reviews.length > 10) {
     const more = document.createElement('div');
     more.className = 'review-card';
     more.style.textAlign = 'center';
     more.style.color = 'var(--text-muted)';
     more.style.fontSize = '11px';
-    more.textContent = `+ ${extractedReviews.length - 10} more reviews (export CSV to see all)`;
+    more.textContent = `+ ${reviews.length - 10} more reviews (export CSV to see all)`;
     elements.resultsList.appendChild(more);
   }
 }
 
-// ===== Export CSV =====
+// ===== Export CSV (reads from IndexedDB) =====
 async function exportCSV() {
-  if (extractedReviews.length === 0) return;
+  let reviews = [];
+  try {
+    reviews = await self.__reviewsDB.getAllReviews();
+  } catch (e) {
+    console.error('Failed to load reviews from IndexedDB:', e);
+  }
+
+  if (reviews.length === 0) return;
 
   const safeName = (productTitle || 'amazon-reviews').replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50);
   const timestamp = new Date().toISOString().split('T')[0];
@@ -302,16 +411,10 @@ async function exportCSV() {
   setStatus('running', 'Generating CSV...');
 
   try {
-    const backendUrl = 'http://localhost:3000';
-    console.log('[CSV Export] Attempting backend API call to:', `${backendUrl}/api/csv`);
-    
-    const response = await fetch(`${backendUrl}/api/csv`, {
+    const response = await fetch(`${BACKEND_URL}/api/csv`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        reviews: extractedReviews,
-        filename: filename,
-      }),
+      body: JSON.stringify({ reviews, filename }),
     });
 
     if (response.ok) {
@@ -322,7 +425,6 @@ async function exportCSV() {
       a.download = filename;
       a.click();
       URL.revokeObjectURL(url);
-      
       setStatus('success', 'CSV exported (via backend)');
       return;
     }
@@ -330,14 +432,13 @@ async function exportCSV() {
     console.log('[CSV Export] Backend not available, falling back to local');
   }
 
-  // Fallback to local CSV export
-  localExportCSV(filename);
+  localExportCSV(filename, reviews);
   setStatus('success', 'CSV exported (local)');
 }
 
-function localExportCSV(filename) {
+function localExportCSV(filename, reviews) {
   const headers = ['Name', 'Stars', 'Title', 'Date', 'Description', 'Verified Purchase', 'Helpful Votes'];
-  const rows = extractedReviews.map((r) => [
+  const rows = reviews.map((r) => [
     csvEscape(r.name),
     csvEscape(r.stars),
     csvEscape(r.title),

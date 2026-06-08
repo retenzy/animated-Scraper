@@ -7,6 +7,13 @@
   "background": {
     "service_worker": "background.js"
   },
+  "content_scripts": [
+    {
+      "matches": ["http://localhost:3000/*", "https://localhost:3000/*"],
+      "js": ["website-content.js"],
+      "run_at": "document_start"
+    }
+  ],
   "host_permissions": [
     "*://*.amazon.com/*",
     "*://*.amazon.in/*",
@@ -22,8 +29,14 @@
     "*://*.amazon.com.mx/*",
     "*://*.amazon.sg/*",
     "*://*.amazon.ae/*",
-    "*://*.amazon.sa/*"
+    "*://*.amazon.sa/*",
+    "http://localhost:3000/*"
   ],
+  "externally_connectable": {
+    "matches": [
+      "*://localhost/*"
+    ]
+  },
   "action": {
     "default_popup": "popup/popup.html"
   }

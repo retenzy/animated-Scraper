@@ -1,17 +1,14 @@
 {
-  "name": "scraper-workspace",
+  "name": "retenzy",
   "private": true,
   "packageManager": "npm@11.11.1",
   "workspaces": [
-    "apps/*"
+    "apps/web",
+    "apps/chrome-extension"
   ],
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "start": "turbo run start",
-    "lint": "turbo run lint"
-  },
-  "devDependencies": {
-    "turbo": "latest"
+    "dev": "npm run dev -w apps/web",
+    "build": "npm run build -w apps/web",
+    "start": "npm run start -w apps/web"
   }
 }

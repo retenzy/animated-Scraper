@@ -1,0 +1,38 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String      @id @default(cuid())
+  username   String      @unique
+  coins      Int         @default(5)
+  createdAt  DateTime    @default(now())
+  creditLogs CreditLog[]
+  scrapeJobs ScrapeJob[]
+}
+
+model CreditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  amount     Int
+  action     String
+  productRef String?
+  createdAt  DateTime @default(now())
+}
+
+model ScrapeJob {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  productRef  String
+  url         String
+  status      String
+  reviewCount Int      @default(0)
+  createdAt   DateTime @default(now())
+}

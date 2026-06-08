@@ -532,6 +532,79 @@ select option {
   font-weight: 500;
 }
 
+/* ===== Settings ===== */
+.settings-section {
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  animation: slideIn 0.2s ease-out;
+}
+
+.settings-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-row label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.settings-input-row {
+  display: flex;
+  gap: 6px;
+}
+
+.settings-input-row input {
+  flex: 1;
+  padding: 8px 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 12px;
+  outline: none;
+}
+
+.settings-input-row input:focus {
+  border-color: var(--border-focus);
+}
+
+.settings-save-btn {
+  padding: 8px 14px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.settings-save-btn:hover {
+  background: var(--accent-hover);
+}
+
+/* ===== Footer Link ===== */
+.footer-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  transition: color var(--transition);
+}
+
+.footer-link:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
 /* ===== Utility ===== */
 .hidden {
   display: none !important;
@@ -571,3 +644,78 @@ select option {
 .error-section:not(.hidden) {
   animation: slideIn 0.25s ease-out;
 }
+
+/* ===== User & Credit Section ===== */
+.user-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  margin-bottom: 2px;
+}
+
+.user-details {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.user-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.user-value {
+  font-size: 12px;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.coins-details {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.coins-badge {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--warning);
+  background: var(--warning-bg);
+  padding: 3px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  display: flex;
+  align-items: center;
+}
+
+.btn-add-coins {
+  width: 22px;
+  height: 22px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+  box-shadow: 0 1px 4px var(--accent-glow);
+}
+
+.btn-add-coins:hover {
+  background: var(--accent-hover);
+  transform: scale(1.1);
+}
+
+.btn-add-coins:active {
+  transform: scale(0.95);
+}
+

@@ -8,8 +8,8 @@
 </head>
 <body>
   <div class="container">
-    <!-- Header -->
-    <div class="header">
+    <!-- Header (click to toggle settings) -->
+    <div id="header-toggle" class="header" title="Click to configure backend URL">
       <div class="header-icon">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="url(#starGrad)" stroke="#F59E0B" stroke-width="1"/>
@@ -24,6 +24,36 @@
       <div class="header-text">
         <h1>Reviews Extractor</h1>
         <p class="subtitle">Amazon Product Reviews</p>
+      </div>
+    </div>
+
+    <!-- Settings (hidden by default, toggle by clicking header) -->
+    <div id="settings-section" class="settings-section hidden">
+      <div class="settings-row">
+        <label for="backend-url-input">Backend URL</label>
+        <div class="settings-input-row">
+          <input type="text" id="backend-url-input" placeholder="http://localhost:3000" />
+          <button id="settings-save-btn" class="settings-save-btn">Save</button>
+        </div>
+        <span class="hint">Change this if your backend runs on a different URL.</span>
+      </div>
+    </div>
+
+    <!-- User & Credit Section -->
+    <div class="user-section">
+      <div class="user-details">
+        <span class="user-label">User:</span>
+        <span id="username-display" class="user-value">...</span>
+      </div>
+      <div class="coins-details">
+        <span class="coins-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="#FBBF24" style="margin-right: 4px; vertical-align: middle;">
+            <circle cx="12" cy="12" r="10" stroke="#F59E0B" stroke-width="2"/>
+            <text x="12" y="16" font-size="12" font-weight="bold" fill="#B45309" text-anchor="middle">¢</text>
+          </svg>
+          <span id="coins-count">0</span>
+        </span>
+        <button id="add-coins-btn" class="btn-add-coins" title="Buy coins">+</button>
       </div>
     </div>
 
@@ -113,10 +143,11 @@
 
     <!-- Footer -->
     <div class="footer">
-      <span>Navigate to an Amazon product or reviews page to start</span>
+      <a id="dashboard-link" href="#" class="footer-link">Open Dashboard &rarr;</a>
     </div>
   </div>
 
+  <script src="../db.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
