@@ -13,7 +13,7 @@ let scraperTabs = new Set();
 let activeScrapeTabId = null;
 let runToken = 0;
 let stateWriteQueue = Promise.resolve();
-let BACKEND_URL = 'https://retenzyreviews.com';
+let BACKEND_URL = 'https://www.retenzyreviews.com';
 
 // Helper to wait
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

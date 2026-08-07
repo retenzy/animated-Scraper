@@ -48,7 +48,7 @@ const elements = {
 // ===== State =====
 let productTitle = '';
 let userId = '';
-let BACKEND_URL = 'https://retenzyreviews.com';
+let BACKEND_URL = 'https://www.retenzyreviews.com';
 let coinRefreshInterval = null;
 
 // ===== Initialize =====
@@ -125,7 +125,7 @@ function setupEventListeners() {
     elements.settingsSection.classList.toggle('hidden');
   });
   elements.settingsSaveBtn.addEventListener('click', () => {
-    const url = elements.backendUrlInput.value.trim() || 'https://retenzyreviews.com';
+    const url = elements.backendUrlInput.value.trim() || 'https://www.retenzyreviews.com';
     BACKEND_URL = url;
     chrome.storage.local.set({ backendUrl: url }, () => {
       elements.settingsSection.classList.add('hidden');

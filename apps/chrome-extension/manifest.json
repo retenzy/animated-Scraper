@@ -21,7 +21,8 @@
   "content_scripts": [
     {
       "matches": [
-        "https://retenzyreviews.com/*"
+        "https://retenzyreviews.com/*",
+        "https://www.retenzyreviews.com/*"
       ],
       "js": [
         "website-content.js"
@@ -45,11 +46,13 @@
     "*://*.amazon.sg/*",
     "*://*.amazon.ae/*",
     "*://*.amazon.sa/*",
-    "https://retenzyreviews.com/*"
+    "https://retenzyreviews.com/*",
+    "https://www.retenzyreviews.com/*"
   ],
   "externally_connectable": {
     "matches": [
-      "https://retenzyreviews.com/*"
+      "https://retenzyreviews.com/*",
+      "https://www.retenzyreviews.com/*"
     ]
   },
   "action": {
