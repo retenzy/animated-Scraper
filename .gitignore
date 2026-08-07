@@ -4,6 +4,20 @@ dist/
 build/
 .env
 .DS_Store
+client_secret_*.json
+client_secret_*/
 
 # Next.js build output
 .next/
+.vercel
+.env*
+
+# Dev tooling / build artifacts
+.playwright-mcp/
+*.tsbuildinfo
+*.zip
+
+# Agent/tool skill cache
+.agents/
+.claude/
+skills-lock.json

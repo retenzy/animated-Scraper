@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Amazon Reviews Extractor</title>
+  <title>Amazon Review Exporter</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 
@@ -12,22 +12,8 @@
   <div class="container">
     <!-- Header (click to toggle settings) -->
     <div id="header-toggle" class="header" title="Click to configure backend URL">
-      <div class="header-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
-            fill="url(#starGrad)" stroke="#F59E0B" stroke-width="1" />
-          <defs>
-            <linearGradient id="starGrad" x1="2" y1="2" x2="22" y2="22">
-              <stop offset="0%" stop-color="#FBBF24" />
-              <stop offset="100%" stop-color="#F59E0B" />
-            </linearGradient>
-          </defs>
-        </svg>
-      </div>
-      <div class="header-text">
-        <h1>Reviews Extractor</h1>
-        <p class="subtitle">Amazon Product Reviews</p>
-      </div>
+      <img src="https://retenzy.b-cdn.net/wp-content/uploads/2026/07/retenzt-logo-scaled-e1785243763292.png"
+        alt="Retenzy" class="header-logo" />
     </div>
 
     <!-- Settings (hidden by default, toggle by clicking header) -->
@@ -35,7 +21,7 @@
       <div class="settings-row">
         <label for="backend-url-input">Backend URL</label>
         <div class="settings-input-row">
-          <input type="text" id="backend-url-input" placeholder="https://animated-scraper-web.vercel.app" />
+          <input type="text" id="backend-url-input" placeholder="https://retenzyreviews.com" />
           <button id="settings-save-btn" class="settings-save-btn">Save</button>
         </div>
         <span class="hint">Change this if your backend runs on a different URL.</span>
@@ -91,6 +77,59 @@
       <div class="control-group">
         <p class="hint">The scraper runs sequentially in background tabs and pauses for 5-10 seconds between products to
           look natural.</p>
+      </div>
+    </div>
+
+    <!-- Filters (collapsible) -->
+    <div id="filters-section" class="filters-section">
+      <div id="filters-toggle" class="filters-header" title="Toggle filters">
+        <span>Extraction Filters</span>
+        <span id="filters-count" class="filters-count hidden"></span>
+        <svg class="filters-chevron" width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+      <div id="filters-body" class="filters-body hidden">
+        <div class="filter-row">
+          <label for="filter-stars">Minimum stars</label>
+          <select id="filter-stars">
+            <option value="0">Any rating</option>
+            <option value="1">1+ stars</option>
+            <option value="2">2+ stars</option>
+            <option value="3">3+ stars</option>
+            <option value="4">4+ stars</option>
+            <option value="5">5 stars only</option>
+          </select>
+        </div>
+        <div class="filter-row">
+          <label class="filter-checkbox">
+            <input type="checkbox" id="filter-verified" />
+            <span>Verified purchases only</span>
+          </label>
+        </div>
+        <div class="filter-row">
+          <label for="filter-helpful">Min helpful votes</label>
+          <input type="number" id="filter-helpful" min="0" placeholder="0" />
+        </div>
+        <div class="filter-row">
+          <label for="filter-days">Date range</label>
+          <select id="filter-days">
+            <option value="0">All time</option>
+            <option value="30">Last 30 days</option>
+            <option value="90">Last 90 days</option>
+            <option value="180">Last 6 months</option>
+            <option value="365">Last year</option>
+          </select>
+        </div>
+        <div class="filter-row">
+          <label for="filter-include">Include keywords</label>
+          <input type="text" id="filter-include" placeholder="e.g. battery, quality (comma separated)" />
+        </div>
+        <div class="filter-row">
+          <label for="filter-exclude">Exclude keywords</label>
+          <input type="text" id="filter-exclude" placeholder="e.g. fake, broken" />
+        </div>
+        <span class="hint">Filters apply to new extractions and to the saved reviews shown/exported below.</span>
       </div>
     </div>
 

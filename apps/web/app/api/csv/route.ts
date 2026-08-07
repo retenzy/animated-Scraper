@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     }
 
     const sanitized = Review.sanitizeMany(reviews)
-    const columns = ['name', 'stars', 'title', 'date', 'description', 'verified', 'helpful']
+    const columns = ['name', 'stars', 'title', 'date', 'location', 'description', 'verified', 'helpful']
 
     const csv = stringify(sanitized, {
       header: true,

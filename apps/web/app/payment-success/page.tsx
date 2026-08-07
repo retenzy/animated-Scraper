@@ -13,7 +13,7 @@ export default function PaymentSuccessPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const sessionId = params.get('session_id')
+    const sessionId = params.get('session_id') || params.get('token')
     const coins = params.get('coins')
     const userId = params.get('userId')
 

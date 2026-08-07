@@ -1,5 +1,5 @@
 /**
- * Amazon Reviews Extractor - Popup Script
+ * Amazon Review Exporter - Popup Script
  * Coordinates multi-product scraping with background.js and updates progress in real-time
  */
 
@@ -33,12 +33,22 @@ const elements = {
   backendUrlInput: document.getElementById('backend-url-input'),
   settingsSaveBtn: document.getElementById('settings-save-btn'),
   dashboardLink: document.getElementById('dashboard-link'),
+  filtersSection: document.getElementById('filters-section'),
+  filtersToggle: document.getElementById('filters-toggle'),
+  filtersBody: document.getElementById('filters-body'),
+  filtersCount: document.getElementById('filters-count'),
+  filterStars: document.getElementById('filter-stars'),
+  filterVerified: document.getElementById('filter-verified'),
+  filterHelpful: document.getElementById('filter-helpful'),
+  filterDays: document.getElementById('filter-days'),
+  filterInclude: document.getElementById('filter-include'),
+  filterExclude: document.getElementById('filter-exclude'),
 };
 
 // ===== State =====
 let productTitle = '';
 let userId = '';
-let BACKEND_URL = 'http://localhost:3000';
+let BACKEND_URL = 'https://retenzyreviews.com';
 let coinRefreshInterval = null;
 
 // ===== Initialize =====
@@ -51,6 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   setupEventListeners();
   await initUser();
+  await loadFilterSettings();
   await restoreState();
   await checkSavedReviews();
   await checkCurrentPage();
@@ -114,7 +125,7 @@ function setupEventListeners() {
     elements.settingsSection.classList.toggle('hidden');
   });
   elements.settingsSaveBtn.addEventListener('click', () => {
-    const url = elements.backendUrlInput.value.trim() || 'http://localhost:3000';
+    const url = elements.backendUrlInput.value.trim() || 'https://retenzyreviews.com';
     BACKEND_URL = url;
     chrome.storage.local.set({ backendUrl: url }, () => {
       elements.settingsSection.classList.add('hidden');
@@ -124,6 +135,117 @@ function setupEventListeners() {
     e.preventDefault();
     chrome.tabs.create({ url: `${BACKEND_URL}/dashboard` });
   });
+  elements.filtersToggle.addEventListener('click', () => {
+    elements.filtersSection.classList.toggle('open');
+    elements.filtersBody.classList.toggle('hidden');
+  });
+  ['filterStars', 'filterVerified', 'filterHelpful', 'filterDays', 'filterInclude', 'filterExclude'].forEach((key) => {
+    elements[key].addEventListener('change', saveFilterSettings);
+    if (key === 'filterInclude' || key === 'filterExclude') {
+      elements[key].addEventListener('input', saveFilterSettings);
+    }
+  });
+}
+
+// ===== Filters =====
+const DEFAULT_FILTERS = {
+  minStars: 0,
+  verifiedOnly: false,
+  minHelpful: 0,
+  days: 0,
+  include: '',
+  exclude: '',
+};
+
+function getFilters() {
+  return {
+    minStars: parseInt(elements.filterStars.value) || 0,
+    verifiedOnly: elements.filterVerified.checked,
+    minHelpful: parseInt(elements.filterHelpful.value) || 0,
+    days: parseInt(elements.filterDays.value) || 0,
+    include: elements.filterInclude.value.trim(),
+    exclude: elements.filterExclude.value.trim(),
+  };
+}
+
+function activeFilterCount(filters) {
+  let count = 0;
+  if (filters.minStars) count++;
+  if (filters.verifiedOnly) count++;
+  if (filters.minHelpful) count++;
+  if (filters.days) count++;
+  if (filters.include) count++;
+  if (filters.exclude) count++;
+  return count;
+}
+
+function updateFilterCountBadge() {
+  const count = activeFilterCount(getFilters());
+  if (count > 0) {
+    elements.filtersCount.textContent = String(count);
+    elements.filtersCount.classList.remove('hidden');
+  } else {
+    elements.filtersCount.classList.add('hidden');
+  }
+}
+
+function saveFilterSettings() {
+  const filters = getFilters();
+  chrome.storage.local.set({ filterSettings: filters });
+  updateFilterCountBadge();
+  checkSavedReviews();
+}
+
+async function loadFilterSettings() {
+  const stored = await new Promise((resolve) => {
+    chrome.storage.local.get(['filterSettings'], (result) => resolve(result.filterSettings || {}));
+  });
+  const filters = { ...DEFAULT_FILTERS, ...stored };
+  elements.filterStars.value = String(filters.minStars);
+  elements.filterVerified.checked = !!filters.verifiedOnly;
+  elements.filterHelpful.value = filters.minHelpful || '';
+  elements.filterDays.value = String(filters.days);
+  elements.filterInclude.value = filters.include || '';
+  elements.filterExclude.value = filters.exclude || '';
+  updateFilterCountBadge();
+}
+
+function applyReviewFilters(reviews, filters) {
+  const minStars = parseInt(filters.minStars) || 0;
+  const verifiedOnly = !!filters.verifiedOnly;
+  const minHelpful = parseInt(filters.minHelpful) || 0;
+  const days = parseInt(filters.days) || 0;
+  const include = (filters.include || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);
+  const exclude = (filters.exclude || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);
+  const cutOff = days ? Date.now() - days * 86400000 : 0;
+
+  return reviews.filter((r) => {
+    const stars = parseFloat(r.stars);
+    if (minStars && (isNaN(stars) || stars < minStars)) return false;
+    if (verifiedOnly && r.verified !== 'Yes') return false;
+    const helpful = parseInt(r.helpful) || 0;
+    if (minHelpful && helpful < minHelpful) return false;
+    if (days) {
+      const d = new Date(r.date);
+      if (!isNaN(d.getTime()) && d.getTime() < cutOff) return false;
+    }
+    const text = `${r.title} ${r.description}`.toLowerCase();
+    if (include.length && !include.some((k) => k && text.includes(k))) return false;
+    if (exclude.length && exclude.some((k) => k && text.includes(k))) return false;
+    return true;
+  });
+}
+
+function groupByProduct(reviews) {
+  const map = new Map();
+  for (const r of reviews) {
+    const key = r.asin || r.productName || 'Unknown Product';
+    if (!map.has(key)) {
+      map.set(key, { key, label: r.productName || r.asin || 'Unknown Product', reviews: [] });
+    }
+    map.get(key).reviews.push(r);
+  }
+  return Array.from(map.values());
 }
 
 // ===== User Management Logic =====
@@ -162,6 +284,8 @@ function updateUserUI(userState) {
 }
 
 // ===== Check saved reviews in IndexedDB =====
+let lastShownTotal = 0;
+
 async function checkSavedReviews() {
   let totalReviews = 0;
   try {
@@ -172,7 +296,8 @@ async function checkSavedReviews() {
 
   if (totalReviews > 0) {
     elements.resultsSection.classList.remove('hidden');
-    if (!elements.resultsList.children.length || elements.resultsCount.textContent !== String(totalReviews)) {
+    if (!elements.resultsList.children.length || totalReviews !== lastShownTotal) {
+      lastShownTotal = totalReviews;
       showResultsPreview();
     }
   }
@@ -408,7 +533,8 @@ async function startExtraction() {
     action: 'START_SCRAPING',
     queue: queue,
     closeTabAfter: closeTabAfter,
-    userId: userId
+    userId: userId,
+    filters: getFilters()
   });
 }
 
@@ -418,7 +544,7 @@ function stopExtraction() {
   setStatus('running', 'Stopping extraction...');
 }
 
-// ===== Show Results Preview (reads from IndexedDB) =====
+// ===== Show Results Preview (reads from IndexedDB, grouped by product) =====
 async function showResultsPreview() {
   elements.resultsList.innerHTML = '';
 
@@ -429,36 +555,69 @@ async function showResultsPreview() {
     console.error('Failed to load reviews from IndexedDB:', e);
   }
 
-  elements.resultsCount.textContent = reviews.length;
+  const filtered = applyReviewFilters(reviews, getFilters());
+  elements.resultsCount.textContent = filtered.length;
 
-  const preview = reviews.slice(0, 10);
-  preview.forEach((r) => {
-    const card = document.createElement('div');
-    card.className = 'review-card';
-    card.innerHTML = `
-      <div class="review-card-header">
-        <span class="review-card-name">${escapeHtml(r.name)}</span>
-        <span class="review-card-stars">${'★'.repeat(Math.round(parseFloat(r.stars) || 0))}${'☆'.repeat(5 - Math.round(parseFloat(r.stars) || 0))}</span>
-      </div>
-      <div class="review-card-title">${escapeHtml(r.title)}</div>
-      <div class="review-card-date">${escapeHtml(r.date)}${r.verified === 'Yes' ? ' · ✓ Verified' : ''}</div>
-      <div class="review-card-asin">${escapeHtml(r.asin || '')}</div>
-    `;
-    elements.resultsList.appendChild(card);
-  });
+  const groups = groupByProduct(filtered);
 
-  if (reviews.length > 10) {
-    const more = document.createElement('div');
-    more.className = 'review-card';
-    more.style.textAlign = 'center';
-    more.style.color = 'var(--text-muted)';
-    more.style.fontSize = '11px';
-    more.textContent = `+ ${reviews.length - 10} more reviews (export CSV to see all)`;
-    elements.resultsList.appendChild(more);
+  if (groups.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'review-card';
+    empty.style.textAlign = 'center';
+    empty.style.color = 'var(--text-muted)';
+    empty.style.fontSize = '11px';
+    empty.textContent = 'No saved reviews match the current filters.';
+    elements.resultsList.appendChild(empty);
+    return;
   }
+
+  const PREVIEW_PER_PRODUCT = 5;
+
+  groups.forEach((group) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'product-group';
+
+    const header = document.createElement('div');
+    header.className = 'product-group-header';
+    header.innerHTML = `
+      <div class="product-group-title">${escapeHtml(group.label)}</div>
+      <div class="product-group-meta">
+        <span class="product-group-count">${group.reviews.length} reviews</span>
+        <span class="product-group-asin">${escapeHtml(group.key)}</span>
+      </div>
+    `;
+    wrapper.appendChild(header);
+
+    const preview = group.reviews.slice(0, PREVIEW_PER_PRODUCT);
+    preview.forEach((r) => {
+      const card = document.createElement('div');
+      card.className = 'review-card';
+      card.innerHTML = `
+        <div class="review-card-header">
+          <span class="review-card-name">${escapeHtml(r.name)}</span>
+          <span class="review-card-stars">${'★'.repeat(Math.round(parseFloat(r.stars) || 0))}${'☆'.repeat(5 - Math.round(parseFloat(r.stars) || 0))}</span>
+        </div>
+        <div class="review-card-title">${escapeHtml(r.title)}</div>
+        <div class="review-card-date">${escapeHtml(r.date)}${r.verified === 'Yes' ? ' · ✓ Verified' : ''}</div>
+      `;
+      wrapper.appendChild(card);
+    });
+
+    if (group.reviews.length > PREVIEW_PER_PRODUCT) {
+      const more = document.createElement('div');
+      more.className = 'review-card';
+      more.style.textAlign = 'center';
+      more.style.color = 'var(--text-muted)';
+      more.style.fontSize = '11px';
+      more.textContent = `+ ${group.reviews.length - PREVIEW_PER_PRODUCT} more reviews (export CSV to see all)`;
+      wrapper.appendChild(more);
+    }
+
+    elements.resultsList.appendChild(wrapper);
+  });
 }
 
-// ===== Export CSV (reads from IndexedDB) =====
+// ===== Export CSV (reads from IndexedDB, one file per product) =====
 async function exportCSV() {
   let reviews = [];
   try {
@@ -469,12 +628,38 @@ async function exportCSV() {
 
   if (reviews.length === 0) return;
 
-  const safeName = (productTitle || 'amazon-reviews').replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50);
+  const filtered = applyReviewFilters(reviews, getFilters());
+  if (filtered.length === 0) {
+    showError('No saved reviews match the current filters.');
+    return;
+  }
+
+  const groups = groupByProduct(filtered);
   const timestamp = new Date().toISOString().split('T')[0];
-  const filename = `${safeName}_reviews_${timestamp}.csv`;
 
-  setStatus('running', 'Generating CSV...');
+  setStatus('running', groups.length > 1
+    ? `Generating ${groups.length} CSV files (one per product)...`
+    : 'Generating CSV...');
 
+  let exportedAny = false;
+  for (const group of groups) {
+    const safeName = (group.label || 'amazon-reviews').replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50);
+    const filename = `${safeName}_reviews_${timestamp}.csv`;
+    const ok = await exportOneCSV(filename, group.reviews);
+    if (ok) exportedAny = true;
+    await new Promise((r) => setTimeout(r, 400));
+  }
+
+  if (exportedAny) {
+    setStatus('success', groups.length > 1
+      ? `Exported ${groups.length} files (1 per product)`
+      : 'CSV exported');
+  } else {
+    setStatus('error', 'CSV export failed. Backend unreachable.');
+  }
+}
+
+async function exportOneCSV(filename, reviews) {
   try {
     const response = await fetch(`${BACKEND_URL}/api/csv`, {
       method: 'POST',
@@ -490,24 +675,24 @@ async function exportCSV() {
       a.download = filename;
       a.click();
       URL.revokeObjectURL(url);
-      setStatus('success', 'CSV exported (via backend)');
-      return;
+      return true;
     }
   } catch (backendErr) {
     console.log('[CSV Export] Backend not available, falling back to local');
   }
 
   localExportCSV(filename, reviews);
-  setStatus('success', 'CSV exported (local)');
+  return true;
 }
 
 function localExportCSV(filename, reviews) {
-  const headers = ['Name', 'Stars', 'Title', 'Date', 'Description', 'Verified Purchase', 'Helpful Votes'];
+  const headers = ['Name', 'Stars', 'Title', 'Date', 'Location', 'Description', 'Verified Purchase', 'Helpful Votes'];
   const rows = reviews.map((r) => [
     csvEscape(r.name),
     csvEscape(r.stars),
     csvEscape(r.title),
     csvEscape(r.date),
+    csvEscape(r.location),
     csvEscape(r.description),
     csvEscape(r.verified),
     csvEscape(r.helpful),

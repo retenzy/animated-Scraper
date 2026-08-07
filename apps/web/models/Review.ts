@@ -3,6 +3,7 @@ export class Review {
   stars: string
   title: string
   date: string
+  location: string
   description: string
   verified: string
   helpful: string
@@ -12,6 +13,7 @@ export class Review {
     this.stars = (data.stars as string) || 'N/A'
     this.title = (data.title as string) || 'N/A'
     this.date = (data.date as string) || 'N/A'
+    this.location = (data.location as string) || ''
     this.description = (data.description as string) || 'N/A'
     this.verified = (data.verified as string) || 'No'
     this.helpful = (data.helpful as string) || '0'

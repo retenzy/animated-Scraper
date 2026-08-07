@@ -1,5 +1,5 @@
 /**
- * Amazon Reviews Extractor - Background Service Worker
+ * Amazon Review Exporter - Background Service Worker
  * Manages the sequential scraping queue, tab lifecycle, and results state
  */
 
@@ -9,7 +9,11 @@ importScripts('db.js');
 let isRunning = false;
 let currentTabId = null;
 let keepAliveInterval = null;
-let BACKEND_URL = 'https://animated-scraper-web.vercel.app';
+let scraperTabs = new Set();
+let activeScrapeTabId = null;
+let runToken = 0;
+let stateWriteQueue = Promise.resolve();
+let BACKEND_URL = 'https://retenzyreviews.com';
 
 // Helper to wait
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -67,17 +71,23 @@ async function getStoredState() {
   };
 }
 
-// Update scraper state in both chrome.storage + IndexedDB
-async function updateState(updates) {
-  const currentState = await getStoredState();
-  const newState = { ...currentState, ...updates };
-  return new Promise((resolve) => {
-    chrome.storage.local.set({ scraperState: newState }, async () => {
-      // Backup to IndexedDB for persistence across SW restarts
-      await self.__reviewsDB.saveState(newState).catch(() => {});
-      resolve(newState);
+// Update scraper state in both chrome.storage + IndexedDB.
+// Serialized through a promise queue so concurrent callers can't lose each other's writes.
+function updateState(updates) {
+  const write = stateWriteQueue.then(async () => {
+    const currentState = await getStoredState();
+    const newState = { ...currentState, ...updates };
+    await new Promise((resolve) => {
+      chrome.storage.local.set({ scraperState: newState }, async () => {
+        // Backup to IndexedDB for persistence across SW restarts
+        await self.__reviewsDB.saveState(newState).catch(() => {});
+        resolve();
+      });
     });
+    return newState;
   });
+  stateWriteQueue = write.then(() => {}, () => {});
+  return write;
 }
 
 // Create a new tab (in background by default)
@@ -141,9 +151,10 @@ function waitTabLoaded(tabId) {
 }
 
 // Start the sequential scraping queue
-async function startQueue(queue, closeTabAfter, userId) {
+async function startQueue(queue, closeTabAfter, userId, filters) {
   if (isRunning) return;
   isRunning = true;
+  const myRun = runToken;
   startKeepAlive();
 
   const backendUrl = BACKEND_URL;
@@ -159,11 +170,13 @@ async function startQueue(queue, closeTabAfter, userId) {
     extractedReviews: []
   });
 
-  for (let i = 0; i < queue.length; i++) {
+  try {
+    for (let i = 0; i < queue.length; i++) {
     if (!isRunning) break;
 
     const url = queue[i];
     let tabId = null;
+    let keepTabOpen = false;
 
     const asinMatch = url.match(/\b([A-Z0-9]{10})\b/i);
     const productRef = asinMatch ? asinMatch[1] : `Product ${i + 1}`;
@@ -179,11 +192,13 @@ async function startQueue(queue, closeTabAfter, userId) {
       if (currentCoins <= 0) {
         isRunning = false;
         stopKeepAlive();
-        await updateState({
-          status: 'idle',
-          progressText: 'Insufficient coins. Click "+" to buy more.',
-          currentProductTitle: ''
-        });
+        if (myRun === runToken) {
+          await updateState({
+            status: 'idle',
+            progressText: 'Insufficient coins. Click "+" to buy more.',
+            currentProductTitle: ''
+          });
+        }
         break;
       }
 
@@ -197,10 +212,16 @@ async function startQueue(queue, closeTabAfter, userId) {
         const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (!activeTab || !activeTab.url) throw new Error('No active Amazon tab found');
         tabId = activeTab.id;
+        activeScrapeTabId = tabId;
+        if (activeTab.url !== url) {
+          await chrome.tabs.update(tabId, { url });
+          await waitTabLoaded(tabId);
+        }
       } else {
         const tab = await createTab(url);
         tabId = tab.id;
         currentTabId = tabId;
+        scraperTabs.add(tabId);
         await waitTabLoaded(tabId);
       }
 
@@ -221,15 +242,25 @@ async function startQueue(queue, closeTabAfter, userId) {
 
       const results = await chrome.scripting.executeScript({
         target: { tabId },
-        func: () => window.__amazonReviewScraper?.extract
-          ? window.__amazonReviewScraper.extract()
+        func: (filterOpts) => window.__amazonReviewScraper?.extract
+          ? window.__amazonReviewScraper.extract(filterOpts)
           : { error: 'Scraper not loaded' },
+        args: [filters || {}],
         world: 'MAIN'
       });
 
-      const productReviews = results?.[0]?.result;
+      const productResult = results?.[0]?.result;
+      let productReviews = null;
+      let productTitle = productRef;
 
-      if (productReviews && Array.isArray(productReviews)) {
+      if (productResult && Array.isArray(productResult)) {
+        productReviews = productResult;
+      } else if (productResult && Array.isArray(productResult.reviews)) {
+        productReviews = productResult.reviews;
+        productTitle = productResult.productTitle || productRef;
+      }
+
+      if (productReviews) {
         const newReviews = productReviews.filter(r => r.id && !seenIds.has(r.id));
         newReviews.forEach(r => seenIds.add(r.id));
         addedCount = newReviews.length;
@@ -238,7 +269,12 @@ async function startQueue(queue, closeTabAfter, userId) {
 
         if (newReviews.length > 0) {
           try {
-            await self.__reviewsDB.saveReviews(newReviews, productRef);
+            const enriched = newReviews.map(r => ({
+              ...r,
+              productName: productTitle,
+              asin: productRef
+            }));
+            await self.__reviewsDB.saveReviews(enriched, productRef);
           } catch (dbErr) {
             console.error('IndexedDB save failed:', dbErr);
           }
@@ -261,8 +297,17 @@ async function startQueue(queue, closeTabAfter, userId) {
         }
 
         console.log(`Scraped ${addedCount} reviews for ${productRef} (cost: ${coinsToDeduct} coin${coinsToDeduct > 1 ? 's' : ''}). Session total: ${totalReviewCount}`);
-      } else if (productReviews?.error) {
-        console.error(`Scraper error on ${productRef}:`, productReviews.error);
+      } else if (productResult?.error) {
+        console.error(`Scraper error on ${productRef}:`, productResult.error);
+        if (productResult.error === 'LOGIN_REQUIRED' || productResult.error === 'CAPTCHA') {
+          jobStatus = 'BLOCKED';
+          keepTabOpen = true;
+          scraperTabs.delete(tabId);
+          currentTabId = null;
+          await updateState({
+            progressText: `${productRef} needs attention: ${productResult.message || 'Blocked by Amazon'}. The tab is left open for you.`
+          });
+        }
       }
 
     } catch (err) {
@@ -275,10 +320,13 @@ async function startQueue(queue, closeTabAfter, userId) {
       body: JSON.stringify({ userId, productRef, url, status: jobStatus, reviewCount: addedCount })
     }).catch(err => console.warn('Failed to log scrape job:', err));
 
-    if (closeTabAfter && tabId) {
+    if (closeTabAfter && tabId && !keepTabOpen) {
       chrome.tabs.remove(tabId).catch(() => {});
+      scraperTabs.delete(tabId);
       currentTabId = null;
     }
+
+    if (activeScrapeTabId === tabId) activeScrapeTabId = null;
 
     if (i < queue.length - 1 && isRunning) {
       const cooldownMs = Math.floor(Math.random() * 5000 + 5000);
@@ -293,9 +341,28 @@ async function startQueue(queue, closeTabAfter, userId) {
         remainingMs -= 1000;
       }
     }
+    }
+  } catch (queueErr) {
+    console.error('Unhandled queue error:', queueErr);
+    isRunning = false;
+    stopKeepAlive();
+    try {
+      if (scraperTabs.size > 0) chrome.tabs.remove(Array.from(scraperTabs)).catch(() => {});
+      scraperTabs.clear();
+      if (currentTabId) chrome.tabs.remove(currentTabId).catch(() => {});
+      currentTabId = null;
+    } catch (e) {}
+    if (myRun === runToken) {
+      await updateState({
+        status: 'idle',
+        progressText: `Extraction stopped due to an error: ${queueErr?.message || 'unknown error'}`,
+        progressCount: totalReviewCount,
+        currentProductTitle: ''
+      });
+    }
   }
 
-  if (isRunning) {
+  if (isRunning && myRun === runToken) {
     isRunning = false;
     currentTabId = null;
     stopKeepAlive();
@@ -308,7 +375,7 @@ async function startQueue(queue, closeTabAfter, userId) {
     });
   } else {
     const currentState = await getStoredState();
-    if (currentState.status === 'running') {
+    if (currentState.status === 'running' && myRun === runToken) {
       currentTabId = null;
       stopKeepAlive();
       await updateState({
@@ -320,17 +387,32 @@ async function startQueue(queue, closeTabAfter, userId) {
   }
 }
 
-// Stop the scraping process
+// Stop the scraping process — kills all scraper tabs and any in-flight extraction
 async function stopQueue() {
+  isRunning = false;
+  runToken++; // Invalidate the current run so it can't overwrite this stop state
+  stopKeepAlive();
+
+  if (scraperTabs.size > 0) {
+    try {
+      chrome.tabs.remove(Array.from(scraperTabs));
+    } catch (e) {}
+    scraperTabs.clear();
+  }
   if (currentTabId) {
     try {
       chrome.tabs.remove(currentTabId);
     } catch (e) {}
     currentTabId = null;
   }
+  // Kill in-flight extraction running on the user's active tab by reloading it
+  if (activeScrapeTabId) {
+    try {
+      chrome.tabs.reload(activeScrapeTabId);
+    } catch (e) {}
+    activeScrapeTabId = null;
+  }
 
-  isRunning = false;
-  stopKeepAlive();
   const state = await getStoredState();
   await updateState({
     status: 'idle',
@@ -348,18 +430,20 @@ async function stopQueue() {
 
   const state = await getStoredState();
   if (state.status === 'running') {
-    // Recover the scrape state — keep alive so popup can see it
+    // The queue loop is dead (SW restarted) — reset to idle so the popup un-sticks
     await updateState({
+      status: 'idle',
       progressText: `Extraction was interrupted. ${state.progressCount || 0} reviews were saved.`,
+      currentProductTitle: ''
     });
-    console.warn('[background] Restarted with running state — recovered from storage.');
+    console.warn('[background] Restarted with running state — reset to idle.');
   }
 })();
 
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'START_SCRAPING') {
-    startQueue(message.queue, message.closeTabAfter, message.userId);
+    startQueue(message.queue, message.closeTabAfter, message.userId, message.filters);
     sendResponse({ status: 'started' });
   } else if (message.action === 'STOP_SCRAPING') {
     stopQueue().then(() => {

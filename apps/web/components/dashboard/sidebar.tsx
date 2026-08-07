@@ -27,7 +27,7 @@ export default function DashboardSidebar() {
       <div className="p-6 border-b border-border">
         <Link href="/dashboard" className="flex items-center gap-3">
           <Image
-            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/retenzylogo-cqWQfbIHGt5raErZgTMrLAV8ADBl2A.png"
+            src="https://retenzy.b-cdn.net/wp-content/uploads/2026/07/retenzt-logo-scaled-e1785243763292.png"
             alt="Retenzy"
             width={100}
             height={32}

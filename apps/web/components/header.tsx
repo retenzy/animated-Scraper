@@ -15,7 +15,7 @@ export default function Header({ onLoginClick }: { onLoginClick: () => void }) {
       <nav className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3">
           <Image
-            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/retenzylogo-cqWQfbIHGt5raErZgTMrLAV8ADBl2A.png"
+            src="https://retenzy.b-cdn.net/wp-content/uploads/2026/07/retenzt-logo-scaled-e1785243763292.png"
             alt="Retenzy Logo"
             width={120}
             height={40}

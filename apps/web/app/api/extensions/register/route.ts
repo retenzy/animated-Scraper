@@ -1,4 +1,12 @@
-const registrations = new Map<string, string>()
+import { redis } from '@/lib/redis'
+
+const REGISTRATION_TTL_SECONDS = 7 * 24 * 60 * 60
+
+const fallback = new Map<string, string>()
+
+function keyFor(userId: string) {
+  return `extension:register:${userId}`
+}
 
 export async function POST(req: Request) {
   try {
@@ -8,7 +16,12 @@ export async function POST(req: Request) {
       return Response.json({ error: 'userId and extensionId are required' }, { status: 400 })
     }
 
-    registrations.set(userId, extensionId)
+    if (redis) {
+      await redis.set(keyFor(userId), extensionId, { ex: REGISTRATION_TTL_SECONDS })
+    } else {
+      fallback.set(userId, extensionId)
+    }
+
     return Response.json({ success: true })
   } catch {
     return Response.json({ error: 'Internal server error' }, { status: 500 })
@@ -24,8 +37,14 @@ export async function GET(req: Request) {
       return Response.json({ error: 'userId query parameter is required' }, { status: 400 })
     }
 
-    const extensionId = registrations.get(userId)
-    return Response.json({ extensionId: extensionId || null })
+    let extensionId: string | null = null
+    if (redis) {
+      extensionId = await redis.get<string>(keyFor(userId))
+    } else {
+      extensionId = fallback.get(userId) || null
+    }
+
+    return Response.json({ extensionId })
   } catch {
     return Response.json({ error: 'Internal server error' }, { status: 500 })
   }

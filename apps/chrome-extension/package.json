@@ -1,9 +1,9 @@
 {
-  "name": "amazon-reviews-extension",
+  "name": "retenzy-amazon-review-exporter",
   "version": "1.0.0",
-  "description": "Chrome extension for Amazon reviews extraction",
+  "description": "Retenzy - Amazon Review Exporter Chrome extension",
   "scripts": {
     "dev": "echo \"Extension development mode (load unpacked in Chrome)\"",
-    "build": "echo \"Build script for extension\""
+    "zip": "rm -f chrome-extension-v1.0.0.zip && zip -r chrome-extension-v1.0.0.zip manifest.json background.js content.js db.js website-content.js popup icons -x \"*.DS_Store\""
   }
 }

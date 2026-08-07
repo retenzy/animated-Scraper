@@ -31,7 +31,7 @@ cd apps/web && npx prisma generate && cd ../..
 npm run dev
 ```
 
-The app runs at `https://animated-scraper-web.vercel.app`.
+The app runs at `https://retenzyreviews.com`.
 
 ## Environment Variables
 

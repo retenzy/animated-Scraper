@@ -46,6 +46,8 @@
 
       const dateText = normalizeText(box.querySelector('[data-hook="review-date"]')?.textContent || '');
       const date = dateText.match(/on\s+(.+)$/i)?.[1]?.trim() || dateText;
+      const locationMatch = dateText.match(/^Reviewed in\s+(.+?)\s+on\s+/i);
+      const location = locationMatch ? locationMatch[1].trim() : '';
 
       const body = normalizeText(
         box.querySelector('[data-hook="review-body"] span')?.textContent ||
@@ -62,6 +64,7 @@
         stars: rating || 'N/A',
         title: title || 'N/A',
         date: date || 'N/A',
+        location: location || '',
         description: body || 'N/A',
         verified: verified ? 'Yes' : 'No',
         helpful,
@@ -183,7 +186,71 @@
     return false;
   }
 
-  async function extractAllReviews() {
+  function getProductTitle() {
+    const sel = document.querySelector('#title, .a-size-large.product-title-word-break, h1');
+    if (sel && normalizeText(sel.textContent)) return normalizeText(sel.textContent);
+    const t = document.title.match(/reviews?\s*:\s*(.+)$/i);
+    return t ? normalizeText(t[1]) : '';
+  }
+
+  function applyReviewFilters(reviews, filters) {
+    if (!filters) return reviews;
+    const minStars = parseInt(filters.minStars) || 0;
+    const verifiedOnly = !!filters.verifiedOnly;
+    const minHelpful = parseInt(filters.minHelpful) || 0;
+    const days = parseInt(filters.days) || 0;
+    const include = (filters.include || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);
+    const exclude = (filters.exclude || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);
+
+    const cutOff = days ? Date.now() - days * 86400000 : 0;
+
+    return reviews.filter((r) => {
+      const stars = parseFloat(r.stars);
+      if (minStars && (isNaN(stars) || stars < minStars)) return false;
+      if (verifiedOnly && r.verified !== 'Yes') return false;
+      const helpful = parseInt(r.helpful) || 0;
+      if (minHelpful && helpful < minHelpful) return false;
+      if (days) {
+        const d = new Date(r.date);
+        if (!isNaN(d.getTime()) && d.getTime() < cutOff) return false;
+      }
+      const text = `${r.title} ${r.description}`.toLowerCase();
+      if (include.length && !include.some((k) => k && text.includes(k))) return false;
+      if (exclude.length && exclude.some((k) => k && text.includes(k))) return false;
+      return true;
+    });
+  }
+
+  function detectInterstitial() {
+    const url = window.location.href;
+    const bodyText = (document.body?.innerText || '').slice(0, 2000);
+
+    if (/\/ap\/signin\b|\/ap\/signin\?/i.test(url) ||
+        document.querySelector('#ap_signin_form, #ap_container') ||
+        (bodyText.includes('Enter mobile number or email') && bodyText.includes('Sign in'))) {
+      return { error: 'LOGIN_REQUIRED', message: 'Amazon sign-in required. Log in to Amazon on the open tab, then retry.' };
+    }
+
+    if (/\/ap\/otp-verification\b/i.test(url) || document.querySelector('#otp-verification-code')) {
+      return { error: 'LOGIN_REQUIRED', message: 'Amazon OTP verification required. Complete it on the open tab, then retry.' };
+    }
+
+    if (/captcha|validatecaptcha|robot-check/i.test(url) ||
+        document.querySelector('#captchacharacters') ||
+        /type the characters you see/i.test(bodyText)) {
+      return { error: 'CAPTCHA', message: 'Amazon CAPTCHA detected. Solve it on the open tab, then retry.' };
+    }
+
+    return null;
+  }
+
+  async function extractAllReviews(filters) {
+    const interstitial = detectInterstitial();
+    if (interstitial) {
+      console.warn('Interstitial detected:', interstitial.message);
+      return interstitial;
+    }
+
     let allReviews = [];
     let seenIds = new Set();
     
@@ -234,7 +301,13 @@
     await clickStarFilter("All stars");
     await randomDelay(800, 1200);
     
-    return allReviews;
+    const filtered = applyReviewFilters(allReviews, filters);
+    console.log(`Extracted ${allReviews.length} reviews, ${filtered.length} match filters.`);
+
+    return {
+      reviews: filtered,
+      productTitle: getProductTitle(),
+    };
   }
 
   window.__amazonReviewScraper = {

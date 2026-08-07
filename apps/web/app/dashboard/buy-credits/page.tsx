@@ -16,7 +16,7 @@ export default function BuyCreditsPage() {
   const [loading, setLoading] = useState<number | null>(null)
   const [error, setError] = useState('')
 
-  const handlePurchase = async (planCoins: number, planPrice: string) => {
+  const handlePurchase = async (planCoins: number) => {
     const userId = (session?.user as Record<string, unknown>)?.id
     if (!userId) return
 
@@ -26,7 +26,7 @@ export default function BuyCreditsPage() {
       const res = await fetch(`/api/credits/${userId}/create-checkout-session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ coins: planCoins, price: planPrice, clientUrl: window.location.origin }),
+        body: JSON.stringify({ coins: planCoins, clientUrl: window.location.origin }),
       })
       const data = await res.json()
       if (data.url) {
@@ -76,7 +76,7 @@ export default function BuyCreditsPage() {
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed mb-8 flex-grow">{plan.description}</p>
             <button
-              onClick={() => handlePurchase(plan.coins, plan.price)}
+              onClick={() => handlePurchase(plan.coins)}
               disabled={loading !== null}
               className={`w-full py-3 px-6 rounded-lg font-semibold text-sm transition-all disabled:opacity-50 ${
                 plan.popular
