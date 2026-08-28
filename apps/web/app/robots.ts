@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/api/', '/dashboard/', '/payment-success/'],
+      disallow: ['/api/', '/cms-api/', '/admin/', '/dashboard/', '/payment-success/'],
     },
     sitemap: 'https://retenzyreviews.com/sitemap.xml',
   }
