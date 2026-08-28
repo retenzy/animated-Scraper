@@ -1,0 +1,177 @@
+.puck-editor {
+  --puck-user-sidebar-left-width: clamp(150px, 15vw, 220px);
+  --puck-user-sidebar-right-width: clamp(260px, 20vw, 360px);
+  --puck-outline-color-text: #000000;
+  --puck-outline-color-text-hover: #000000;
+  --puck-outline-color-text-helper: #1a1a1a;
+  --puck-outline-color-icon: #1a1a1a;
+}
+
+.puck-editor-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  background: var(--puck-color-surface-subtle, #fafafa);
+}
+
+.puck-editor-stage {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.puck-editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.puck-editor-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 6px;
+  border: 1px solid var(--puck-color-border, #dcdcdc);
+  background: var(--puck-color-surface, #ffffff);
+  color: var(--puck-color-text, #181818);
+  font: 500 12px/1 var(--puck-font-family, Inter, system-ui, sans-serif);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.puck-editor-btn:hover {
+  background: var(--puck-color-surface-muted, #f5f5f5);
+}
+
+.puck-editor-btn--primary {
+  background: var(--puck-color-interactive, #0158ad);
+  border-color: var(--puck-color-interactive, #0158ad);
+  color: #ffffff;
+}
+
+.puck-editor-btn--primary:hover {
+  background: var(--puck-color-interactive-hover, #014292);
+}
+
+.puck-editor-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.puck-editor-btn-ai {
+  background: linear-gradient(90deg, #7c3aed, #db2777);
+  border-color: transparent;
+  color: #fff;
+}
+
+.puck-editor-btn-ai:hover {
+  background: linear-gradient(90deg, #6d28d9, #be185d);
+}
+
+.puck-editor-btn-save {
+  background: #111827;
+  border-color: #111827;
+  color: #ffffff;
+}
+
+.puck-editor-btn-save:hover {
+  background: #000000;
+}
+
+.puck-ai-wrap {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  width: var(--puck-user-sidebar-right-width, 360px);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid var(--puck-color-border, #dcdcdc);
+  background: var(--puck-color-surface, #ffffff);
+}
+
+.puck-ai-heading {
+  font: 600 11px/1 var(--puck-font-family, Inter, system-ui, sans-serif);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--puck-color-text-subtle, #6b6b6b);
+}
+
+.puck-ai-launch {
+  width: 100%;
+}
+
+.puck-ai-popover {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 12px;
+  right: 12px;
+  z-index: 20;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid var(--puck-color-border, #dcdcdc);
+  background: var(--puck-color-surface, #ffffff);
+  box-shadow: 0 -6px 30px rgba(0, 0, 0, 0.18);
+}
+
+.puck-ai-label {
+  display: block;
+  margin-bottom: 8px;
+  font: 600 12px/1.2 var(--puck-font-family, Inter, system-ui, sans-serif);
+  color: var(--puck-color-text, #181818);
+}
+
+.puck-ai-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 80px;
+  padding: 10px 12px;
+  margin: 0;
+  border-radius: 8px;
+  border: 1px solid #c8c8c8;
+  background: #ffffff;
+  color: #181818;
+  caret-color: var(--puck-color-interactive, #0158ad);
+  font: 400 13px/1.5 var(--puck-font-family, Inter, system-ui, sans-serif);
+  resize: vertical;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.puck-ai-input::placeholder {
+  color: #9a9a9a;
+  opacity: 1;
+}
+
+.puck-ai-input:focus {
+  border-color: var(--puck-color-interactive, #0158ad);
+  box-shadow: 0 0 0 3px rgba(1, 88, 173, 0.15);
+}
+
+.puck-ai-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.puck-editor-btn[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.puck-editor-status {
+  font: 500 11px/1 var(--puck-font-family, Inter, system-ui, sans-serif);
+  color: var(--puck-color-text-muted, #767676);
+}
