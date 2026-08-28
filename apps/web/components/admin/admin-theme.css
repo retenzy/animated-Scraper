@@ -1,0 +1,1198 @@
+/* ============================================================
+   Retenzy Admin – modern light theme
+   Slate palette · #FFFFFF surfaces · #F8FAFC canvas · #E2E8F0 borders
+   Injected after Payload's default CSS so these win at equal specificity.
+   ============================================================ */
+
+/* ---- Core palette (applies to light AND dark toggle → stays light) ---- */
+html[data-theme='light'],
+html[data-theme='dark'],
+:root {
+  --theme-bg: #f5f7fa;
+  --theme-border-color: #e2e8f0;
+
+  --theme-elevation-0: #ffffff;
+  --theme-elevation-50: #f8fafc;
+  --theme-elevation-100: #f1f5f9;
+  --theme-elevation-150: #e2e8f0;
+  --theme-elevation-200: #e2e8f0;
+  --theme-elevation-250: #cbd5e1;
+  --theme-elevation-300: #cbd5e1;
+  --theme-elevation-350: #94a3b8;
+  --theme-elevation-400: #94a3b8;
+  --theme-elevation-450: #64748b;
+  --theme-elevation-500: #64748b;
+  --theme-elevation-550: #475569;
+  --theme-elevation-600: #475569;
+  --theme-elevation-650: #334155;
+  --theme-elevation-700: #334155;
+  --theme-elevation-750: #334155;
+  --theme-elevation-800: #1e293b;
+  --theme-elevation-850: #0f172a;
+  --theme-elevation-900: #0f172a;
+  --theme-elevation-950: #0f172a;
+  --theme-elevation-1000: #0f172a;
+
+  /* "success" (published badges etc.) → brand blue */
+  --color-success-50: #eff6ff;
+  --color-success-100: #dbeafe;
+  --color-success-150: #bfdbfe;
+  --color-success-200: #93c5fd;
+  --color-success-250: #60a5fa;
+  --color-success-300: #60a5fa;
+  --color-success-400: #3b82f6;
+  --color-success-450: #3b82f6;
+  --color-success-500: #2563eb;
+  --color-success-550: #2563eb;
+  --color-success-600: #1d4ed8;
+  --color-success-650: #1d4ed8;
+  --color-success-700: #1e40af;
+  --color-success-750: #1e40af;
+  --color-success-800: #1e3a8a;
+  --color-success-850: #1e3a8a;
+  --color-success-900: #172554;
+  --color-success-950: #172554;
+}
+
+/* ---- Typography ---- */
+:root {
+  --theme-baseline: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+}
+
+body {
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- Layout shell ---- */
+.template-default {
+  background: var(--theme-bg);
+}
+.template-default__wrap {
+  max-width: 1400px;
+  margin-inline: auto;
+  padding: 32px;
+  padding-top: calc(56px + var(--base-padding));
+}
+
+/* ---- List views (Pages / Posts / Users tables) ---- */
+.collection-list__wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.list-header__title-and-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.list-header__title {
+  font-size: 24px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+/* Search + filters = ROW 1 of the table (a connected band) */
+.list-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+  padding: 12px 16px;
+  margin: 0 !important;
+}
+.search-bar {
+  flex: 1 1 auto;
+  max-width: 520px;
+}
+/* Space between the search field and the Filters toggle */
+.list-controls__toggle-where {
+  margin-left: 0;
+  flex-shrink: 0;
+}
+.search-bar input,
+.collection-list__search-input input {
+  height: 42px;
+  border-radius: 10px;
+  border: 1.5px solid #d6dbe3;
+  background: #fff;
+  font-size: 14px;
+  padding-inline-start: 38px;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search-bar input:focus,
+.collection-list__search-input input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, .13);
+}
+
+/* Hide the Columns filter — table always shows configured columns */
+.list-controls__toggle-columns,
+.list-controls__columns,
+[class*='list-controls__toggle-columns'] {
+  display: none !important;
+}
+
+/* Users edit: hide Change Password / Force Unlock / Cancel buttons (fields auto-open) */
+.collection-edit__auth .auth-fields__controls button,
+#cancel-change-password,
+button[aria-label*='ancel'],
+.auth-fields__controls .btn--style-secondary {
+  display: none !important;
+}
+
+/* Document header title: bold + larger */
+.doc-header__title,
+.render-title {
+  font-weight: 800 !important;
+  font-size: 22px !important;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+.edit-view__title,
+.doc-header__title a {
+  font-weight: 800 !important;
+}
+.doc-controls__dots,
+[class*='doc-controls__dots'] {
+  display: none !important;
+}
+
+/* Bulk selection bar: clean toolbar with real buttons */
+.list-selection {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 8px 12px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  margin: 0 0 10px !important;
+}
+.list-selection > span:first-child {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+.list-selection > span:not(:first-child) {
+  color: #cbd5e1;
+  margin: 0 4px;
+}
+.list-selection__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 6px;
+}
+.list-selection__button,
+.list-selection__actions .btn,
+.edit-many__toggle .btn,
+.delete-documents__toggle {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  height: 32px !important;
+  padding: 0 14px !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  border: 1px solid #e5e7eb !important;
+  background: #ffffff !important;
+  color: #334155 !important;
+  box-shadow: none !important;
+  transition: background 120ms ease, color 120ms ease;
+}
+.list-selection__button:hover,
+.list-selection__actions .btn:hover {
+  background: #f8fafc !important;
+}
+.delete-documents__toggle:hover {
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+  border-color: #fecaca !important;
+}
+
+/* ===== Blue-tick checkboxes (native inputs in table/list) ===== */
+.table input[type='checkbox'],
+[class*='table'] input[type='checkbox'],
+input[type='checkbox'].checkbox-input__input,
+.list-selection input[type='checkbox'] {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  width: 16px !important;
+  height: 16px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 1.5px solid #cbd5e1 !important;
+  border-radius: 4px !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+  cursor: pointer;
+  display: inline-block;
+  vertical-align: middle;
+  position: relative;
+  transform: none !important;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.table input[type='checkbox']:hover,
+[class*='table'] input[type='checkbox']:hover {
+  border-color: #2563eb !important;
+}
+.table input[type='checkbox']:checked,
+[class*='table'] input[type='checkbox']:checked {
+  background: #2563eb !important;
+  border-color: #2563eb !important;
+}
+.table input[type='checkbox']:checked::after,
+[class*='table'] input[type='checkbox']:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 5px;
+  height: 9px;
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* ===== Bulk selection bar: gap from header/toolbar above + clean ===== */
+.list-selection {
+  margin: 18px 0 10px !important;
+}
+
+/* ===== Confirm modal (delete + leave-without-saving): glass modal ===== */
+/* The native <dialog>'s ::backdrop covers the whole viewport — apply the glass
+   tint + blur there so the page stays visible and blurred behind the card. */
+dialog.payload__modal-item::backdrop,
+dialog.confirmation-modal::backdrop {
+  background: rgba(15, 23, 42, 0.35) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+.payload__modal-container {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  inset: 0 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+}
+/* Centered white card */
+.confirmation-modal__wrapper {
+  background: #ffffff !important;
+  border: 1px solid #eaeff5 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18) !important;
+  padding: 24px !important;
+  color: #0f172a !important;
+  width: 440px !important;
+  max-width: calc(100vw - 32px) !important;
+}
+/* The <dialog> element itself is transparent and just centers the card */
+dialog.confirmation-modal,
+dialog.payload__modal-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  position: fixed !important;
+  inset: 0 !important;
+  margin: auto !important;
+  width: auto !important;
+  max-width: calc(100vw - 32px) !important;
+  max-height: calc(100vh - 40px) !important;
+}
+dialog.confirmation-modal .confirmation-modal__wrapper,
+dialog.payload__modal-item .confirmation-modal__wrapper {
+  background: #ffffff !important;
+  border: 1px solid #eaeff5 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
+  padding: 24px !important;
+  width: 440px !important;
+  max-width: calc(100vw - 32px) !important;
+}
+.confirmation-modal__content h1 {
+  font-size: 17px !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  letter-spacing: -0.01em !important;
+  margin: 0 0 8px !important;
+}
+.confirmation-modal__content p {
+  color: #475569 !important;
+  font-size: 14px !important;
+  line-height: 1.55 !important;
+  margin: 0 0 22px !important;
+}
+.confirmation-modal__controls {
+  display: flex !important;
+  gap: 12px !important;
+  justify-content: flex-end !important;
+}
+.confirmation-modal__controls .btn {
+  height: 34px !important;
+  padding: 0 16px !important;
+  border-radius: 9px !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+}
+.confirmation-modal__controls #confirm-action,
+.confirmation-modal__controls .btn--style-primary {
+  background: #dc2626 !important;
+  border: none !important;
+  color: #fff !important;
+}
+#confirm-action .btn__label {
+  visibility: hidden !important;
+  position: relative !important;
+}
+#confirm-action .btn__label::after {
+  content: 'Leave';
+  visibility: visible;
+  position: static;
+}
+#confirm-cancel .btn__label {
+  visibility: hidden !important;
+  position: relative !important;
+}
+#confirm-cancel .btn__label::after {
+  content: 'Cancel';
+  visibility: visible;
+  position: static;
+}
+.confirmation-modal__controls #confirm-cancel,
+.confirmation-modal__controls .btn--style-secondary {
+  border: 1px solid #e2e8f0 !important;
+  color: #334155 !important;
+  background: #ffffff !important;
+}
+
+/* Hide the bulk "Edit many" button in the selection bar (opens a bulk form) */
+.edit-many__toggle,
+.list-selection__actions .edit-many__toggle,
+[class*='edit-many__toggle'] {
+  display: none !important;
+}
+
+/* Dashboard link injected at top of the sidebar */
+/* Dashboard link at top of sidebar (dark) */
+.rz-nav-dashboard {
+  padding: 10px 12px 2px;
+}
+.rz-nav-dashboard-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #cbd5e1 !important;
+  background: transparent !important;
+  text-decoration: none;
+  transition: background 120ms ease, color 120ms ease;
+}
+.rz-nav-dashboard-link svg {
+  flex-shrink: 0;
+}
+.rz-nav-dashboard-link:hover {
+  background: #374151 !important;
+  color: #f9fafb !important;
+}
+
+/* ===== Document edit: breathing room between left (main) and right (sidebar) columns ===== */
+.document-fields--has-sidebar {
+  --main-width: 68%;
+  --main-field-margin: calc(var(--base) * -2);
+}
+.document-fields__edit {
+  padding-left: clamp(16px, 4vw, 48px) !important;
+}
+.document-fields--has-sidebar .document-fields__edit {
+  padding-right: clamp(20px, 3vw, 40px) !important;
+}
+.document-fields__sidebar {
+  padding-left: 24px !important;
+  padding-right: clamp(16px, 3vw, 40px) !important;
+}
+.document-fields__main {
+  padding-right: 24px !important;
+}
+
+/* ===== Polished document edit hierarchy ===== */
+/* Section titles: prominent small-caps group headers */
+.section-title {
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  color: #64748b !important;
+  padding-bottom: 8px !important;
+  border-bottom: 1px solid #eef2f7 !important;
+  margin: 28px 0 18px !important;
+}
+.section-title:first-child { margin-top: 0 !important; }
+
+/* Sidebar fields: group label + consistent spacing */
+.document-fields__sidebar-fields .render-fields > * { margin-bottom: 20px; }
+.document-fields__sidebar label { font-size: 12.5px !important; }
+
+/* Field descriptions: muted, small */
+[class*='description'] { color: #94a3b8 !important; font-size: 12.5px !important; }
+
+/* Add a soft divider under the document header */
+.doc-header__header { border-bottom: 1px solid #e2e8f0 !important; }
+
+/* Readability: slightly larger text in richtext/textarea content */
+.doc-collection .rich-text__editor, .collection-edit .rich-text__editor { line-height: 1.7; }
+
+/* ===== Blog/Post header: spacing + muted metadata ===== */
+/* 32px below the breadcrumb (step-nav) */
+.app-header .step-nav,
+.app-header__step-nav {
+  margin-bottom: 0;
+}
+.doc-header__header {
+  padding-top: 8px !important;
+}
+/* Title stands out as page heading */
+.doc-header__title {
+  display: block;
+  margin: 24px 0 6px !important;
+  font-size: 30px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+  color: #0f172a !important;
+  line-height: 1.15 !important;
+}
+/* Metadata / status row: smaller muted text, 16px gap below title */
+.doc-controls__meta {
+  gap: 16px !important;
+  margin: 8px 0 16px !important;
+}
+.doc-controls__label,
+.doc-controls__value,
+.status__label,
+.status__value {
+  font-size: 13px !important;
+  color: #64748b !important;
+  font-weight: 500 !important;
+}
+.status__value {
+  color: #2563eb !important;
+  font-weight: 600 !important;
+}
+/* 16px gap between header/metadata and the form fields */
+.doc-controls {
+  margin-bottom: 8px !important;
+}
+
+/* ===== Toasts (sonner): clean black snackbar, centered, no close button ===== */
+[data-sonner-toaster] {
+  --normal-bg: #111827 !important;
+  --normal-text: #ffffff !important;
+  --normal-border: #111827 !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+  bottom: 24px !important;
+}
+[data-sonner-toaster] li.toast,
+[data-sonner-toaster] [data-sonner-toast] {
+  background: #111827 !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.35) !important;
+  padding: 18px 28px !important;
+  margin: 0 auto !important;
+  width: 100% !important;
+  max-width: 640px !important;
+}
+[data-sonner-toaster] [data-sonner-toast] .toast-title,
+[data-sonner-toaster] [data-sonner-toast] [data-title] {
+  color: #ffffff !important;
+  font-size: 17px !important;
+  font-weight: 600 !important;
+}
+[data-sonner-toaster] [data-sonner-toast] .toast-content,
+[data-sonner-toaster] [data-sonner-toast] [data-description] {
+  color: #d1d5db !important;
+  font-size: 15px !important;
+}
+[data-sonner-toaster] [data-sonner-toast] [data-icon] {
+  width: 22px !important;
+  height: 22px !important;
+}
+[data-sonner-toaster] [data-sonner-toast] > button,
+[data-sonner-toaster] [data-sonner-toast] .payload-toast-close-button,
+[data-sonner-toaster] [data-sonner-toast] [data-button] {
+  display: none !important;
+}
+[data-sonner-toaster] [data-sonner-toast] [data-icon] {
+  color: #ffffff !important;
+}
+
+/* Array field header actions (Collapse All / Show All): spacing between buttons */
+.array-field__header-actions,
+.array-field__header-content [class*='action'] {
+  display: flex !important;
+  gap: 12px !important;
+}
+.array-field__header-action {
+  margin: 0 6px !important;
+}
+
+/* ===== Save Draft button: black background, white text ===== */
+.save-draft,
+#action-save-draft,
+.btn.save-draft {
+  background: #111827 !important;
+  color: #ffffff !important;
+  border-color: #111827 !important;
+}
+.save-draft:hover,
+#action-save-draft:hover,
+.btn.save-draft:hover {
+  background: #000000 !important;
+  color: #ffffff !important;
+}
+
+/* Table body + header = connected under the search band (row 2+) */
+.collection-list__tables,
+.collection-list__tables .table-wrap {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.table th {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  font-weight: 600;
+  color: #475569;
+  padding: 12px 16px;
+}
+.table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.table tbody tr:hover td {
+  background: #f8fafc;
+}
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+.table a[href*='/collections/'] {
+  color: #2563eb;
+  font-weight: 600;
+  text-decoration: none;
+}
+.table a[href*='/collections/']:hover {
+  text-decoration: underline;
+}
+.paginator {
+  justify-content: center;
+  padding-top: 8px;
+}
+
+/* ---- Sidebar ---- */
+:root,
+html[data-theme='dark'] {
+  --nav-width: 240px;
+}
+aside[class*='nav'],
+.template-default__nav nav,
+.nav {
+  width: 240px;
+}
+
+/* Sidebar panel: dark gray, expanded 240px */
+aside[class*='nav'],
+.template-default__nav,
+.nav {
+  background: #1f2937 !important;
+  border-right: 1px solid #111827 !important;
+  box-shadow: none !important;
+}
+/* Force the nav to stay expanded (Payload defaults to a 60px icon rail) */
+.template-default,
+.template-default--nav-open,
+.nav,
+aside[class*='nav'] {
+  --nav-width: 240px !important;
+}
+.template-default {
+  grid-template-columns: var(--nav-width) minmax(0, 1fr) !important;
+}
+aside[class*='nav'],
+.nav {
+  width: 240px !important;
+  min-width: 240px !important;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Brand header inside the sidebar (dark) */
+.nav__wrap::before {
+  content: 'Retenzy CMS';
+  display: block;
+  flex: 0 0 auto;
+  padding: 18px 16px 10px;
+  border-bottom: none !important;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #f9fafb !important;
+  background: #1f2937;
+}
+
+/* Scroll column fills the sidebar */
+.nav__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+/* Girps block grows, pushing controls+logout to the bottom */
+.nav__wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.nav__wrap [class*='group'] {
+  flex-shrink: 0;
+}
+
+/* Controls (theme + logout) anchored to the bottom of the sidebar (dark) */
+.nav__controls {
+  flex: 0 0 auto !important;
+  margin-top: auto !important;
+  border-top: 1px solid #374151 !important;
+  background: #1f2937 !important;
+  display: flex;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+  gap: 4px;
+  padding: 0;
+}
+
+/* Logout — full-width, text-only, dark (element IS the <a>) */
+.nav__log-out {
+  flex: 1 1 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start;
+  gap: 10px;
+  box-sizing: border-box;
+  width: 100% !important;
+  align-self: stretch !important;
+  padding: 14px 16px !important;
+  min-height: 46px;
+  border-radius: 0 !important;
+  color: #d1d5db !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  text-decoration: none;
+  transition: background 120ms ease, color 120ms ease;
+}
+.nav__log-out::before {
+  content: 'Logout';
+}
+.nav__log-out:hover {
+  background: #374151 !important;
+  color: #ffffff !important;
+}
+.nav__log-out svg {
+  display: none !important;
+}
+/* Ensure the parent stretches children full-width */
+.nav__controls > *,
+.nav__controls .nav__log-out,
+.nav__controls [class*='log-out'] {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Vertical rhythm between section groups */
+.nav-group {
+  padding: 6px 16px;
+  margin-top: 28px;
+}
+.nav-group:first-child {
+  margin-top: 16px;
+}
+
+/* Group headers (dark) — bold, white */
+.nav-group__title,
+.nav__label {
+  color: #f9fafb !important;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding-inline: 16px;
+  margin: 0 0 8px;
+}
+.nav-group__toggle,
+.nav-group__indicator,
+[class*='nav-group__toggle'] {
+  color: #f9fafb !important;
+}
+
+/* Links — navigation pills (dark) */
+.nav__link {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #cbd5e1 !important;
+  gap: 10px;
+  transition: background 120ms ease, color 120ms ease;
+}
+.nav__link:hover {
+  background: #374151 !important;
+  color: #f9fafb !important;
+}
+
+/* Active — indigo pill */
+.nav__link.active-link {
+  background: #4f46e5;
+  color: #4f46e5;
+  font-weight: 600;
+}
+
+/* Collapse toggler (dark, only when visible) */
+.template-default__nav-toggler-wrapper {
+  background: transparent;
+  border-right: none;
+}
+.template-default__nav-toggler-container {
+  background: transparent;
+}
+.template-default__nav-toggler {
+  background: transparent !important;
+}
+.nav__header {
+  border-bottom: 1px solid #374151;
+  background: #1f2937;
+}
+
+/* ---- Cards / list rows ---- */
+.dashboard__group,
+.dashboard__card,
+.collection-list .table tr td,
+.render-title,
+doc-controls {
+  border-color: #e2e8f0;
+}
+table th {
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: #64748b;
+}
+
+/* Buttons */
+.btn {
+  border-radius: 10px;
+}
+.btn--style-primary {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+}
+
+/* Inputs */
+input[type='text'],
+input[type='email'],
+input[type='password'],
+textarea,
+.select input {
+  border-radius: 8px;
+}
+
+/* ---- Custom Retenzy dashboard (rz-dash) ---- */
+.rz-dash {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 8px 4px 64px;
+}
+.rz-dash h1 {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  margin: 0 0 4px;
+}
+.rz-dash-sub {
+  color: #64748b;
+  font-size: 14px;
+  margin: 0 0 28px;
+}
+.rz-dash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.rz-stat {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+.rz-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.rz-stat-icon.blue { background: #eff6ff; }
+.rz-stat-icon.orange { background: #fff7ed; }
+.rz-stat-icon.green { background: #ecfdf5; }
+.rz-stat-num {
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.1;
+}
+.rz-stat-label {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 2px;
+}
+.rz-panel {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+.rz-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.rz-panel-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+.rz-panel-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2563eb;
+  text-decoration: none;
+}
+.rz-panel-link:hover { text-decoration: underline; }
+.rz-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 20px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.rz-row:last-child { border-bottom: none; }
+.rz-row-main { min-width: 0; }
+.rz-row-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rz-row-meta { font-size: 12.5px; color: #94a3b8; margin-top: 2px; }
+.rz-pill {
+  flex-shrink: 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  text-transform: capitalize;
+}
+.rz-pill.published, .rz-pill.draft { background: #eff6ff; color: #1d4ed8; }
+.rz-row a.rz-row-link { text-decoration: none; }
+.rz-empty { padding: 22px 20px; color: #94a3b8; font-size: 14px; }
+
+/* ============================================================
+   List-view layout fixes (Users / Pages / Posts tables)
+   ============================================================ */
+
+/* 1 & 2. Kill vertical dead-space; make ONE connected toolbar */
+.collection-list__wrap > *:not(:last-child) {
+  margin-bottom: 0 !important;
+}
+.collection-list__wrap {
+  gap: 0 !important;
+}
+.collection-list__sub-header {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+.list-controls {
+  flex-direction: row !important;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.list-controls__toggle-group-by {
+  flex: 0 0 auto !important;
+}
+.list-controls [class*='toggle'],
+.list-controls button,
+.list-controls__toggle-columns,
+.list-controls__toggle-group-by,
+.list-controls__toggle-sort,
+.list-controls__toggle-where {
+  margin: 0 6px !important;
+}
+
+/* 3. Narrow checkbox column + small square icon */
+.table th:first-child,
+.table td:first-child {
+  width: 36px;
+  min-width: 36px;
+  padding-inline-start: 12px;
+  padding-inline-end: 4px;
+}
+
+/* 4. Table uses the full content width */
+.table,
+.collection-list__tables {
+  width: 100%;
+}
+.table {
+  border-collapse: collapse;
+}
+
+/* 5. Prominent "+ Create" button (was rendering like a text link) */
+/* List header: bold title + primary button on one line */
+.list-header__title-and-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.list-header__title {
+  font-size: 24px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+.list-create-new-doc__create-new-button,
+.list-header__title-actions .btn,
+.list-create-new-doc__create-new-button.btn {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border: none !important;
+  height: 30px !important;
+  padding: 0 12px !important;
+  border-radius: 8px !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+  transition: background 120ms ease;
+}
+.list-create-new-doc__create-new-button.btn--icon-style-without-border {
+  box-shadow: none !important;
+}
+.list-create-new-doc__create-new-button:hover {
+  background: #1d4ed8 !important;
+}
+
+/* ============================================================
+   Edit / document view (globals + collections)
+   ============================================================ */
+
+/* ---- Edit view: clean fields with room to breathe ---- */
+.document-fields__form,
+.collection-edit__form { width: 100%; max-width: 1280px; }
+/* Give each field clear vertical space (fixes overlapping/looked-clumsy) */
+.document-fields__fields > *,
+.render-fields > * { margin-bottom: 18px; }
+.render-fields .render-fields > * { margin-bottom: 14px; }
+
+/* Tabs: simple underline style — NOT a boxed card */
+.tabs-field { background: transparent; border: none; box-shadow: none; border-radius: 0; overflow: visible; }
+.tabs-field [class*='tab-list'], .tabs-field [class*='tab-buttons'] {
+  display: flex; flex-wrap: wrap; gap: 2px; padding: 0 0 10px;
+  border-bottom: 1px solid #e5e7eb; background: transparent;
+}
+.tabs-field__tab-button { border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 600; color: #64748b; transition: color 120ms ease, background 120ms ease, box-shadow 120ms ease; }
+.tabs-field__tab-button:hover { background: #eef2ff; color: #4f46e5; }
+.tabs-field__tab-button--active { background: #eef2ff; color: #4f46e5; }
+.tabs-field__content-wrap { padding: 24px 0; }
+
+.section-title { font-size: 16px; font-weight: 700; letter-spacing: 0.02em; color: #334155; margin-bottom: 16px; }
+
+/* Space between a field's label and its input */
+.field-label, label { margin-bottom: 8px; font-size: 14px; font-weight: 600; color: #334155; }
+.field-type { margin-bottom: 20px; }
+.field-type [class*='description'] { margin-top: 6px; }
+
+/* Inputs: full-width, soft gray, roomy */
+.doc-collection input[type='text'],
+.doc-collection input[type='email'],
+.doc-collection input[type='url'],
+.doc-collection input[type='number'],
+.doc-collection input[type='password'],
+.doc-collection textarea,
+.collection-edit input[type='text'],
+.collection-edit input[type='email'],
+.collection-edit input[type='url'],
+.collection-edit input[type='number'],
+.collection-edit input[type='password'],
+.collection-edit textarea,
+.document-fields input[type='text'],
+.document-fields input[type='email'],
+.document-fields input[type='url'],
+.document-fields input[type='number'],
+.document-fields input[type='password'],
+.document-fields textarea,
+select,
+[class*='doc'] input[type='text'],
+[class*='doc'] input[type='email'],
+[class*='doc'] input[type='password'] {
+  width: 100%;
+  box-sizing: border-box;
+  background: #f8fafc;
+  border: 1px solid #d6dbe3;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #1e293b;
+  transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
+}
+.doc-collection input:focus,
+.collection-edit input:focus,
+.document-fields input:focus,
+[class*='doc'] input:focus,
+textarea:focus,
+select:focus {
+  background: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* Toggles / radios / checkboxes: no overlap, roomy rows */
+[class*='doc'] .radio-group,
+.collection-edit .radio-group,
+[class*='doc'] .field-type [class*='radio'] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+}
+[class*='doc'] .radio-input,
+.collection-edit .radio-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px;
+}
+[class*='doc'] .checkbox-input,
+.collection-edit .checkbox-input {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 28px;
+  line-height: 1.4;
+}
+[class*='doc'] .checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Arrays: lightweight, no heavy cards, but rows must not overlap */
+.array-field { background: transparent; border: none; padding: 0; }
+/* Keep the row header container visible (holds row-label + drag + ⋮ actions/Delete),
+   but hide only the redundant "Toggle block" text button inside it. */
+.collapsible__toggle {
+  display: none !important;
+}
+.collapsible__toggle-wrap {
+  display: flex !important;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 8px 8px 16px !important;
+}
+/* Make the ⋮ (more actions) button visible so Delete is reachable */
+.collapsible__actions-wrap {
+  pointer-events: auto !important;
+}
+.popup-button.array-actions__button,
+.popup-button--default.popup-button--background {
+  pointer-events: auto !important;
+}
+.array-field__row-header {
+  padding: 9px 12px !important;
+  min-height: 38px !important;
+  height: auto !important;
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+.array-field__row-header .row-label {
+  font-weight: 600;
+  font-size: 14px;
+  color: #334155;
+}
+.array-field__row-header .render-fields { padding: 14px 16px 16px !important; }
+[class*='collapsible__header-wrap'] { border: 1px solid #eef2f7; border-radius: 10px 10px 0 0; background: #ffffff; }
+[class*='collapsible__header-wrap'] + [class*='content'] { border-radius: 0 0 10px 10px; }
+
+/* Save: small primary button, right-aligned; no floating card */
+.form-submit, [class*='doc-actions'] {
+  width: 100%; margin-inline: auto; margin-top: 6px; background: transparent; border: none;
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+}
+.form-submit .btn, [class*='doc-actions'] .btn { border-radius: 8px; height: 34px !important; padding: 0 14px !important; font-size: 13px !important; }
+.form-submit .btn--style-primary { background: #2563eb; color: #fff; border: none; }
+.form-submit .btn--style-primary:hover { background: #1d4ed8; }
