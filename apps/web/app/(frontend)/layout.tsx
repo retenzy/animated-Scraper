@@ -30,6 +30,9 @@ export const metadata: Metadata = {
     title: 'Retenzy - Extract Amazon Reviews in Seconds',
     description: 'Extract Amazon product reviews locally and export them as CSV with powerful filters.',
   },
+  verification: {
+    google: 'xuJMVWJch64axn2d97JY9IL1vYtfWcVXd61x8-NBAWQ',
+  },
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
