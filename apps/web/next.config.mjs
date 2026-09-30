@@ -5,7 +5,7 @@ const nextConfig = {
   images: { unoptimized: true },
   serverExternalPackages: ['@prisma/client'],
   turbopack: {
-    root: '/home/dev-4/Developer/animated-Scraper',
+    root: '/home/shantanu/Downloads/scraper',
   },
 }
 

@@ -13,8 +13,8 @@ export async function POST(req: Request) {
     storeOtp(cleanEmail, otp)
 
     const sent = await sendOtpEmail(cleanEmail, otp)
-    if (!sent && !process.env.SENDGRID_API_KEY) {
-      return Response.json({ sent: false, otp })
+    if (!sent) {
+      return Response.json({ error: 'Could not send the verification email. Please try again.' }, { status: 502 })
     }
 
     return Response.json({ sent: true })

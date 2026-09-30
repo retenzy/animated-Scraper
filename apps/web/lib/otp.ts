@@ -48,10 +48,12 @@ export async function sendOtpEmail(email: string, otp: string): Promise<boolean>
     return true
   }
 
+  const fromEmail = process.env.EMAIL_FROM || 'noreply@retenzyreviews.com'
+
   try {
     await sgMail.send({
       to: email,
-      from: { email: 'noreply@retenzy.com', name: 'Retenzy' },
+      from: { email: fromEmail, name: process.env.EMAIL_FROM_NAME || 'Retenzy' },
       subject: 'Your Retenzy verification code',
       html: `
         <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
@@ -66,7 +68,11 @@ export async function sendOtpEmail(email: string, otp: string): Promise<boolean>
     })
     return true
   } catch (err) {
-    console.error('[OTP] SendGrid error:', err)
+    // SendGrid hides the real cause in err.message ("Unauthorized", "Forbidden"),
+    // so log the API error list too — an unverified sender is the usual culprit.
+    const detail = (err as { response?: { data?: { errors?: { message?: string }[] } } }).response
+      ?.data?.errors?.[0]?.message
+    console.error(`[OTP] SendGrid error from "${fromEmail}":`, detail || err)
     return false
   }
 }
