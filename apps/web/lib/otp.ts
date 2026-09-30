@@ -48,7 +48,7 @@ export async function sendOtpEmail(email: string, otp: string): Promise<boolean>
     return true
   }
 
-  const fromEmail = process.env.EMAIL_FROM || 'noreply@retenzyreviews.com'
+  const fromEmail = process.env.EMAIL_FROM || 'noreply@retenzy.com'
 
   try {
     await sgMail.send({
